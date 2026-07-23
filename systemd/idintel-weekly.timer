@@ -1,0 +1,12 @@
+[Unit]
+Description=ID Intelligence — weekly must-read on Friday
+
+[Timer]
+# 07:15 Friday: after the daily run has collected and appraised the day's papers.
+OnCalendar=Fri *-*-* 07:15:00
+Persistent=true
+RandomizedDelaySec=180
+Unit=idintel-weekly.service
+
+[Install]
+WantedBy=timers.target

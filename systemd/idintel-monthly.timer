@@ -1,0 +1,11 @@
+[Unit]
+Description=ID Intelligence — monthly thematic review
+
+[Timer]
+OnCalendar=*-*-01 07:30:00
+Persistent=true
+RandomizedDelaySec=300
+Unit=idintel-monthly.service
+
+[Install]
+WantedBy=timers.target

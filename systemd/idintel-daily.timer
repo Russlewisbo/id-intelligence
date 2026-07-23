@@ -1,0 +1,13 @@
+[Unit]
+Description=ID Intelligence — daily digest at 06:30
+
+[Timer]
+OnCalendar=*-*-* 06:30:00
+# Run as soon as possible after a missed trigger (machine asleep or powered off).
+Persistent=true
+# Stagger slightly so every scheduled job does not hit the network at once.
+RandomizedDelaySec=180
+Unit=idintel-daily.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,303 @@
+# Relevance scoring. Every rule fires at most once and contributes its weight.
+#
+#   fields   which text to search (title, abstract, journal, pub_types)
+#   any_of   fires if ANY pattern matches
+#   all_of   list of groups; fires only if EVERY group has a match  (AND of ORs)
+#   none_of  veto — suppresses the rule even if the above matched
+#
+# Patterns are case-insensitive Python regexes.
+
+priority:
+  critical: 40
+  high: 25
+  medium: 12
+
+preprint_penalty: -3
+no_abstract_penalty: -4
+
+rules:
+  # ------------------------------------------------- clinical domain (topical)
+  - id: hsct_infection
+    topical: true
+    label: HSCT infection
+    weight: 12
+    all_of:
+      - ["\\bHSCT\\b", "\\bHCT\\b", "stem[- ]cell transplant", "allogeneic transplant",
+         "bone marrow transplant", "allo-?SCT", "\\bCAR-?T\\b", "haematopoietic",
+         "hematopoietic"]
+      - ["infect", "\\bfever\\b", "neutropeni", "\\bCMV\\b", "cytomegalovirus",
+         "prophylax", "antifungal", "antibacterial", "\\bGVHD\\b", "sepsis",
+         "bacteraemia", "bacteremia", "viraemia", "viremia"]
+
+  - id: aspergillus
+    topical: true
+    label: Aspergillus
+    weight: 10
+    any_of: ["aspergill", "invasive mou?ld", "\\bIPA\\b", "galactomannan",
+             "azole[- ]resistan", "TR34", "TR46", "chronic pulmonary aspergillosis",
+             "\\bCAPA\\b", "\\bIAPA\\b"]
+
+  - id: candida
+    topical: true
+    label: Candida
+    weight: 10
+    any_of: ["candid(a|aemia|emia|iasis|ozyma)", "\\bC\\. auris\\b",
+             "invasive candidiasis", "echinocandin[- ]resistan", "\\bFKS1\\b"]
+
+  - id: other_ifd
+    topical: true
+    label: Other invasive fungal disease
+    weight: 9
+    any_of: ["mucormyc", "\\bMucorales\\b", "cryptococc", "fusari", "scedospor",
+             "\\bLomentospora\\b", "pneumocystis", "\\bPJP\\b", "histoplasm",
+             "coccidioidomyc", "blastomyc", "talaromyc", "endemic mycos"]
+
+  - id: esbl_cre
+    topical: true
+    label: ESBL / CRE
+    weight: 9
+    any_of: ["\\bESBL\\b", "extended[- ]spectrum beta[- ]lactamase",
+             "carbapenem[- ]resistant", "carbapenemase", "\\bCRE\\b", "\\bCRAB\\b",
+             "\\bCRPA\\b", "\\bKPC\\b", "\\bNDM\\b", "OXA-?48", "\\bVIM\\b", "\\bIMP\\b",
+             "metallo-?beta-?lactamase", "difficult[- ]to[- ]treat resistance",
+             "pan[- ]drug[- ]resistant", "extensively drug[- ]resistant", "\\bXDR\\b"]
+
+  - id: vanco_pkpd
+    topical: true
+    label: Vancomycin PK/PD
+    weight: 9
+    all_of:
+      - ["vancomycin", "teicoplanin"]
+      - ["pharmacokinetic", "pharmacodynamic", "\\bAUC\\b", "therapeutic drug monitoring",
+         "\\bTDM\\b", "trough", "dosing", "dose optimi[sz]ation", "nephrotox",
+         "Bayesian", "population PK", "\\bMIC\\b"]
+
+  - id: antimicrobial_pkpd
+    topical: true
+    label: Antimicrobial PK/PD
+    weight: 7
+    all_of:
+      - ["beta[- ]lactam", "meropenem", "piperacillin", "cefepime", "ceftazidime",
+         "voriconazole", "posaconazole", "isavuconazole", "amikacin", "polymyxin",
+         "colistin", "linezolid", "daptomycin", "cefiderocol", "flucytosine",
+         "amphotericin"]
+      - ["pharmacokinetic", "pharmacodynamic", "\\bAUC\\b", "therapeutic drug monitoring",
+         "\\bTDM\\b", "continuous infusion", "extended infusion", "dose optimi[sz]ation",
+         "Monte Carlo", "population PK", "target attainment"]
+    none_of: ["\\bin vitro\\b only"]
+
+  - id: novel_agents
+    topical: true
+    label: Novel agent
+    weight: 8
+    any_of: ["rezafungin", "ibrexafungerp", "olorofim", "fosmanogepix", "opelconazole",
+             "oteseconazole", "encochleated amphotericin", "MAT2203",
+             "cefiderocol", "sulbactam[- ]durlobactam", "aztreonam[- ]avibactam",
+             "meropenem[- ]vaborbactam", "imipenem[- ]relebactam", "ceftobiprole",
+             "zosurabalpin", "gepotidacin", "zoliflodacin", "lefamulin",
+             "contezolid", "tebipenem", "benapenem", "xeruborbactam",
+             "first[- ]in[- ]class antifungal", "novel antibiotic"]
+
+  - id: stewardship_dx
+    topical: true
+    label: Stewardship / rapid diagnostics
+    weight: 6
+    any_of: ["antimicrobial stewardship", "antibiotic stewardship",
+             "rapid diagnostic", "metagenomic sequencing", "\\bmNGS\\b",
+             "cell[- ]free DNA", "\\bMALDI-TOF\\b", "T2Candida", "beta-?D-?glucan",
+             "procalcitonin[- ]guided", "de-?escalation", "oral switch",
+             "duration of (antibiotic|antimicrobial) therapy"]
+
+  - id: sepsis_bsi
+    topical: true
+    label: Sepsis / bloodstream infection
+    weight: 6
+    any_of: ["septic shock", "\\bsepsis\\b", "bacteraemia", "bacteremia",
+             "bloodstream infection", "\\bBSI\\b", "infective endocarditis",
+             "\\bS\\. aureus\\b bacter", "candidaemia", "candidemia"]
+
+  - id: outbreak_emerging
+    topical: true
+    label: Outbreak / emerging threat
+    weight: 6
+    any_of: ["outbreak", "nosocomial transmission", "emerging pathogen",
+             "\\bmpox\\b", "avian influenza", "\\bH5N1\\b", "Marburg", "Ebola",
+             "Nipah", "public health emergency", "pandemic preparedness"]
+
+  # -------------------------------------------------- evidence type (methodology)
+  - id: guideline
+    label: Guideline
+    weight: 12
+    fields: [title, abstract, journal, pub_types]
+    any_of: ["\\bGuideline\\b", "Practice Guideline", "consensus statement",
+             "clinical practice guideline", "\\bIDSA\\b guidance", "\\bESCMID\\b guideline",
+             "\\bECIL\\b", "recommendations of the", "position paper"]
+
+  - id: meta_analysis
+    label: Meta-analysis
+    weight: 8
+    fields: [title, abstract, pub_types]
+    any_of: ["Meta-?Analysis", "systematic review", "network meta-?analysis",
+             "pooled analysis", "individual participant data"]
+
+  - id: randomized_trial
+    label: Randomised trial
+    weight: 8
+    fields: [title, abstract, pub_types]
+    any_of: ["Randomized Controlled Trial", "randomi[sz]ed (controlled )?trial",
+             "double-?blind", "placebo-?controlled", "non-?inferiority trial",
+             "\\bRCT\\b", "phase 3", "phase III", "pragmatic trial"]
+
+  - id: bayesian
+    label: Bayesian / advanced methods
+    weight: 6
+    any_of: ["Bayesian", "posterior probability", "credible interval",
+             "target trial emulation", "causal inference", "propensity[- ]score",
+             "machine learning", "prediction model", "external validation"]
+
+  - id: large_cohort
+    label: Large / multicentre cohort
+    weight: 4
+    all_of:
+      - ["multicent", "multi-?centre", "multi-?center", "nationwide", "registry",
+         "prospective cohort", "international"]
+      - ["patients", "participants", "episodes", "isolates", "cohort"]
+
+  # ---------------------------------------------------------- negative signals
+  - id: case_report
+    label: Case report
+    weight: -6
+    fields: [title, abstract, pub_types]
+    any_of: ["Case Reports?", "a case of", "case series of \\d", "we report a case"]
+    none_of: ["case series of \\d{3,}", "Guideline"]
+
+  - id: non_human
+    label: Non-clinical / animal model
+    weight: -5
+    any_of: ["\\bin mice\\b", "murine model", "rat model", "zebrafish",
+             "\\bGalleria\\b", "\\bC\\. elegans\\b", "veterinar", "bovine",
+             "poultry", "swine", "plant pathogen", "soil isolates"]
+    none_of: ["clinical trial", "patients"]
+
+  - id: editorial
+    label: Editorial / correspondence
+    weight: -4
+    fields: [title, abstract, pub_types]
+    any_of: ["^Editorial", "^Correspondence", "^Letter to the Editor",
+             "^Comment on", "^Reply to", "^Erratum", "^Correction to",
+             "^Retraction", "\\bEditorial\\b", "\\bComment\\b"]
+
+  - id: off_topic
+    label: Off-topic
+    weight: -8
+    any_of: ["oncology outcomes without infection", "\\bdentistry\\b",
+             "orthodontic", "agricultural yield", "food spoilage",
+             "wastewater treatment plant design"]
+
+# ------------------------------------------------------------- journal tiers
+# Highest matching tier applies; tiers never stack. Matched against the
+# normalised journal name, so "Clin. Infect. Dis." and "Clinical Infectious
+# Diseases" both work.
+journal_tiers:
+  - label: Top general
+    weight: 5
+    match: ["n engl j med", "new england journal of medicine", "^lancet$",
+            "the lancet$", "^nature$", "^science$", "^jama$", "^bmj$",
+            "nat med", "nature medicine", "ann intern med", "^cell$",
+            "sci transl med", "nat rev microbiol", "nat microbiol",
+            "lancet infect dis", "lancet microbe"]
+
+  - label: Core ID
+    weight: 4
+    match: ["clin infect dis", "clinical infectious diseases",
+            "j infect dis", "journal of infectious diseases",
+            "open forum infect dis", "clin microbiol infect",
+            "clinical microbiology and infection", "clin microbiol rev",
+            "emerg infect dis", "j antimicrob chemother",
+            "antimicrob agents chemother", "mbio", "cell host microbe",
+            "transpl infect dis", "am j transplant", "transplant cell ther"]
+
+  - label: Specialist
+    weight: 2
+    match: ["med mycol", "mycoses", "j fungi", "int j antimicrob agents",
+            "jac antimicrob resist", "j glob antimicrob resist",
+            "antimicrob resist infect control", "infect control hosp epidemiol",
+            "j clin microbiol", "microbiol spectr", "ther drug monit",
+            "clin pharmacokinet", "j infect", "int j infect dis",
+            "eur j clin microbiol", "j hosp infect", "bone marrow transplant",
+            "blood adv", "intensive care med", "crit care"]
+
+  - label: Agency / society
+    weight: 6
+    match: ["mmwr", "morbidity and mortality", "^who$", "world health organization",
+            "^fda$", "^ema$", "^cdc$", "^idsa$", "^escmid$",
+            "clinicaltrials gov"]
+
+# ------------------------------------------------------- monthly review themes
+# Same matcher syntax as `rules`; `weight` is ignored here.
+themes:
+  - id: pipeline
+    label: Antibiotic pipeline
+    weight: 0
+    all_of:
+      - ["cefiderocol", "sulbactam[- ]durlobactam", "aztreonam[- ]avibactam",
+         "meropenem[- ]vaborbactam", "imipenem[- ]relebactam", "zosurabalpin",
+         "gepotidacin", "zoliflodacin", "lefamulin", "contezolid", "tebipenem",
+         "ceftobiprole", "new antibiotic", "novel antibacterial", "phase [123]",
+         "first[- ]in[- ]human", "\\bpipeline\\b", "bacteriophage therapy"]
+      - ["antibacterial", "antibiotic", "bacterial", "Gram-negative",
+         "Gram-positive", "trial", "approval", "efficacy"]
+
+  - id: fungal_therapeutics
+    label: New fungal therapeutics
+    weight: 0
+    all_of:
+      - ["rezafungin", "ibrexafungerp", "olorofim", "fosmanogepix", "opelconazole",
+         "oteseconazole", "encochleated", "MAT2203", "new antifungal",
+         "novel antifungal", "antifungal (agent|therapy|treatment|development)"]
+      - ["fungal", "antifungal", "candid", "aspergill", "mould", "mold",
+         "trial", "efficacy", "approval"]
+
+  - id: resistance_trends
+    label: Resistance trends and epidemiology
+    weight: 0
+    all_of:
+      - ["surveillance", "prevalence", "epidemiolog", "trend", "incidence",
+         "national", "global burden", "antibiogram"]
+      - ["resistan", "carbapenemase", "\\bESBL\\b", "\\bMRSA\\b", "\\bVRE\\b",
+         "azole[- ]resistan", "echinocandin[- ]resistan", "\\bAMR\\b",
+         "susceptibility"]
+
+  - id: key_trials
+    label: Important clinical trials
+    weight: 0
+    fields: [title, abstract, pub_types]
+    all_of:
+      - ["randomi[sz]ed", "Randomized Controlled Trial", "phase 3", "phase III",
+         "non-?inferiority", "placebo-?controlled", "Clinical Trial"]
+      - ["infect", "antimicrobial", "antibiotic", "antifungal", "sepsis",
+         "vaccin", "prophylax", "bacteraemia", "bacteremia"]
+
+  - id: evidence_synthesis
+    label: Bayesian and meta-analytic work
+    weight: 0
+    any_of: ["Bayesian", "network meta-?analysis", "meta-?analysis",
+             "systematic review", "individual participant data",
+             "target trial emulation", "credible interval"]
+
+  - id: guidelines_month
+    label: Guidelines and consensus documents
+    weight: 0
+    fields: [title, abstract, journal, pub_types]
+    any_of: ["\\bGuideline\\b", "Practice Guideline", "consensus statement",
+             "clinical practice guideline", "position paper", "\\bECIL\\b",
+             "recommendations of the"]
+
+  - id: immunocompromised_month
+    label: Immunocompromised host
+    weight: 0
+    all_of:
+      - ["\\bHSCT\\b", "\\bHCT\\b", "stem[- ]cell transplant", "solid organ transplant",
+         "\\bSOT\\b", "neutropeni", "\\bCAR-?T\\b", "immunocompromis", "haematolog",
+         "hematolog"]
+      - ["infect", "prophylax", "antifungal", "\\bCMV\\b", "sepsis", "fever"]

@@ -1,0 +1,20 @@
+{% extends "base.html.j2" %}
+{% import "macros.html.j2" as m %}
+
+{% block content %}
+<div class="statbar">
+  <div class="stat"><span class="n">{{ month_total }}</span><span class="k">records screened</span></div>
+  <div class="stat"><span class="n">{{ sections | length }}</span><span class="k">themes</span></div>
+</div>
+
+{% if not sections %}
+<p class="empty">No records matched the configured themes this month.</p>
+{% endif %}
+
+{% for section in sections %}
+<h2 class="section">{{ section.label }} <span class="count">({{ section['items'] | length }})</span></h2>
+{% for item in section['items'] %}
+{{ m.paper(item, show_abstract=false, show_why=false) }}
+{% endfor %}
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html.j2" %}
+{% import "macros.html.j2" as m %}
+
+{% block content %}
+<div class="statbar">
+  <div class="stat"><span class="n">{{ total }}</span><span class="k">new records</span></div>
+  <div class="stat"><span class="n">{{ n_summarised }}</span><span class="k">appraised</span></div>
+  {% for g in groups %}
+  <div class="stat"><span class="n">{{ g.total }}</span><span class="k">{{ g.label }}</span></div>
+  {% endfor %}
+</div>
+
+{% if feed_errors %}
+<div class="note">
+  <b>{{ feed_errors | length }} source(s) failed this run.</b>
+  {% for e in feed_errors[:6] %}<br>{{ e.source }} — {{ e.last_error }}{% endfor %}
+  {% if feed_errors | length > 6 %}<br>…and {{ feed_errors | length - 6 }} more (run <code>idintel doctor</code>).{% endif %}
+</div>
+{% endif %}
+
+{% if excluded %}
+<div class="note">{{ excluded }} off-topic record(s) collected today were hidden
+(no infectious-disease match). Set <code>report.daily_require_topical: false</code>
+in <code>config/settings.yaml</code> to see them.</div>
+{% endif %}
+
+{% if not groups %}
+<p class="empty">Nothing relevant landed today.</p>
+{% endif %}
+
+{% for g in groups %}
+<h2 class="section {{ g.key }}">{{ g.label }} <span class="count">({{ g.total }})</span></h2>
+{% for item in g['items'] %}
+{{ m.paper(item, show_abstract=true, show_why=(g.key in ['critical', 'high'])) }}
+{% endfor %}
+{% if g.hidden %}
+<p class="note">{{ g.hidden }} further {{ g.label | lower }} record(s) not shown.
+Raise <code>report.daily_max_per_group.{{ g.key }}</code> in
+<code>config/settings.yaml</code>, or use <code>idintel top</code>.</p>
+{% endif %}
+{% endfor %}
+{% endblock %}

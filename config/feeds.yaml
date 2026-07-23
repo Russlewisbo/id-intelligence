@@ -1,0 +1,222 @@
+# RSS/Atom sources.
+#
+# Journal *indexing* is handled by PubMed queries in settings.yaml — that is
+# where broad coverage comes from. These feeds exist for the two things PubMed
+# cannot give you:
+#   1. ahead-of-print articles, days to weeks before PubMed indexes them
+#   2. agency and society output that never enters PubMed at all
+#
+# Every URL below was verified live on 2026-07-22. Publisher feed URLs rot;
+# run `idintel doctor -v` after any edit. A failing feed is reported there and
+# never breaks a run.
+#
+# Fields: name (required), url (required), kind, journal, pub_types, enabled.
+#   kind: article | preprint | trial | regulatory | guideline
+
+groups:
+
+  # ------------------------------------------------------ regulatory agencies
+  regulatory:
+    - name: FDA Press Announcements
+      url: https://www.fda.gov/about-fda/contact-fda/stay-informed/rss-feeds/press-releases/rss.xml
+      kind: regulatory
+      journal: FDA
+    - name: FDA Drug Safety and Availability
+      url: https://www.fda.gov/about-fda/contact-fda/stay-informed/rss-feeds/drugs/rss.xml
+      kind: regulatory
+      journal: FDA
+    - name: FDA MedWatch Safety Alerts
+      url: https://www.fda.gov/about-fda/contact-fda/stay-informed/rss-feeds/medwatch/rss.xml
+      kind: regulatory
+      journal: FDA
+    # EMA publishes ~20 feeds; these are the ones that carry CHMP output.
+    # Full index: https://www.ema.europa.eu/en/news-events/rss-feeds
+    - name: EMA Committee Agendas and Minutes
+      url: https://www.ema.europa.eu/en/agendas-and-minutes.xml
+      kind: regulatory
+      journal: EMA
+    - name: EMA News
+      url: https://www.ema.europa.eu/en/news.xml
+      kind: regulatory
+      journal: EMA
+    - name: EMA New Human Medicines
+      url: https://www.ema.europa.eu/en/new-human-medicine-new.xml
+      kind: regulatory
+      journal: EMA
+    - name: EMA Scientific Guidelines
+      url: https://www.ema.europa.eu/en/scientific-guidelines.xml
+      kind: guideline
+      journal: EMA
+    # Noisy (200+ entries: every EPAR update). Enable if you want completeness.
+    - name: EMA All Human Medicine Updates
+      url: https://www.ema.europa.eu/en/human-medicine-new.xml
+      kind: regulatory
+      journal: EMA
+      enabled: false
+
+  # ---------------------------------------------------------- public health
+  public_health:
+    - name: CDC MMWR
+      url: https://tools.cdc.gov/api/v2/resources/media/132608.rss
+      kind: guideline
+      journal: MMWR
+    - name: CDC Emerging Infectious Diseases (ahead of print)
+      url: https://wwwnc.cdc.gov/eid/rss/ahead-of-print.xml
+      journal: Emerg Infect Dis
+    - name: CDC Emerging Infectious Diseases (upcoming issue)
+      url: https://wwwnc.cdc.gov/eid/rss/upcoming.xml
+      journal: Emerg Infect Dis
+    - name: CDC Health Alert Network
+      url: https://tools.cdc.gov/api/v2/resources/media/285676.rss
+      kind: guideline
+      journal: CDC HAN
+    - name: WHO News
+      url: https://www.who.int/rss-feeds/news-english.xml
+      kind: guideline
+      journal: WHO
+    - name: ECDC Threat Reports
+      url: https://www.ecdc.europa.eu/en/taxonomy/term/1298/feed
+      kind: guideline
+      journal: ECDC
+    # WHO retired the Disease Outbreak News feed; no replacement URL is
+    # advertised on who.int. DON items still surface via "WHO News" above.
+    - name: WHO Disease Outbreak News
+      url: https://www.who.int/feeds/entity/csr/don/en/rss.xml
+      kind: guideline
+      journal: WHO
+      enabled: false
+
+  # ------------------------------------------------ infectious disease journals
+  journals_id:
+    - name: Lancet Infectious Diseases
+      url: https://www.thelancet.com/rssfeed/laninf_current.xml
+      journal: Lancet Infect Dis
+    - name: Lancet Microbe
+      url: https://www.thelancet.com/rssfeed/lanmic_current.xml
+      journal: Lancet Microbe
+    - name: Clinical Microbiology and Infection
+      url: https://rss.sciencedirect.com/publication/science/1198743X
+      journal: Clin Microbiol Infect
+    - name: Journal of Infection
+      url: https://rss.sciencedirect.com/publication/science/01634453
+      journal: J Infect
+    - name: International Journal of Infectious Diseases
+      url: https://rss.sciencedirect.com/publication/science/12019712
+      journal: Int J Infect Dis
+    - name: International Journal of Antimicrobial Agents
+      url: https://rss.sciencedirect.com/publication/science/09248579
+      journal: Int J Antimicrob Agents
+    - name: Journal of Global Antimicrobial Resistance
+      url: https://rss.sciencedirect.com/publication/science/22137165
+      journal: J Glob Antimicrob Resist
+    - name: Journal of Hospital Infection
+      url: https://rss.sciencedirect.com/publication/science/01956701
+      journal: J Hosp Infect
+    - name: Diagnostic Microbiology and Infectious Disease
+      url: https://rss.sciencedirect.com/publication/science/07328893
+      journal: Diagn Microbiol Infect Dis
+
+  # ------------------------------------------------------------- microbiology
+  journals_micro:
+    - name: Nature Reviews Microbiology
+      url: https://www.nature.com/nrmicro.rss
+      journal: Nat Rev Microbiol
+    - name: Nature Microbiology
+      url: https://www.nature.com/nmicrobiol.rss
+      journal: Nat Microbiol
+    - name: PLOS Pathogens
+      url: https://journals.plos.org/plospathogens/feed/atom
+      journal: PLoS Pathog
+    - name: Frontiers in Cellular and Infection Microbiology
+      url: https://www.frontiersin.org/journals/cellular-and-infection-microbiology/rss
+      journal: Front Cell Infect Microbiol
+
+  # ------------------------------------------------------------------ mycology
+  journals_mycology:
+    - name: Mycoses
+      url: https://onlinelibrary.wiley.com/feed/14390507/most-recent
+      journal: Mycoses
+
+  # -------------------------------------------------- transplant / haematology
+  journals_transplant:
+    - name: Transplant Infectious Disease
+      url: https://onlinelibrary.wiley.com/feed/13993062/most-recent
+      journal: Transpl Infect Dis
+    - name: Clinical Transplantation
+      url: https://onlinelibrary.wiley.com/feed/13990012/most-recent
+      journal: Clin Transplant
+    - name: American Journal of Transplantation
+      url: https://rss.sciencedirect.com/publication/science/16006135
+      journal: Am J Transplant
+    - name: Transplantation and Cellular Therapy
+      url: https://rss.sciencedirect.com/publication/science/26666367
+      journal: Transplant Cell Ther
+
+  # ------------------------------------------------------------ general medicine
+  journals_general:
+    - name: New England Journal of Medicine
+      url: https://www.nejm.org/action/showFeed?jc=nejm&type=etoc&feed=rss
+      journal: N Engl J Med
+    - name: The Lancet
+      url: https://www.thelancet.com/rssfeed/lancet_current.xml
+      journal: Lancet
+    - name: BMJ
+      url: https://www.bmj.com/rss/recent.xml
+      journal: BMJ
+    - name: Nature
+      url: https://www.nature.com/nature.rss
+      journal: Nature
+    - name: Nature Medicine
+      url: https://www.nature.com/nm.rss
+      journal: Nat Med
+    - name: Science
+      url: https://www.science.org/rss/news_current.xml
+      journal: Science
+
+  # ------------------------------------------------- blocked by bot protection
+  # These publishers return HTTP 403 to any non-browser client (Cloudflare), and
+  # BioMedCentral now serves HTML instead of RSS. Every journal listed here is
+  # already covered by the PubMed queries in settings.yaml, so nothing is lost —
+  # only ahead-of-print latency. Left in place, disabled, so you can re-test.
+  blocked:
+    - name: Antimicrobial Agents and Chemotherapy
+      url: https://journals.asm.org/action/showFeed?type=etoc&feed=rss&jc=aac
+      journal: Antimicrob Agents Chemother
+      enabled: false
+    - name: Journal of Clinical Microbiology
+      url: https://journals.asm.org/action/showFeed?type=etoc&feed=rss&jc=jcm
+      journal: J Clin Microbiol
+      enabled: false
+    - name: mBio
+      url: https://journals.asm.org/action/showFeed?type=etoc&feed=rss&jc=mbio
+      journal: mBio
+      enabled: false
+    - name: Microbiology Spectrum
+      url: https://journals.asm.org/action/showFeed?type=etoc&feed=rss&jc=spectrum
+      journal: Microbiol Spectr
+      enabled: false
+    - name: Clinical Microbiology Reviews
+      url: https://journals.asm.org/action/showFeed?type=etoc&feed=rss&jc=cmr
+      journal: Clin Microbiol Rev
+      enabled: false
+    - name: Journal of Fungi
+      url: https://www.mdpi.com/rss/journal/jof
+      journal: J Fungi (Basel)
+      enabled: false
+    - name: Antibiotics (MDPI)
+      url: https://www.mdpi.com/rss/journal/antibiotics
+      journal: Antibiotics (Basel)
+      enabled: false
+    - name: BMC Infectious Diseases
+      url: https://bmcinfectdis.biomedcentral.com/articles/most-recent/rss.xml
+      journal: BMC Infect Dis
+      enabled: false
+    - name: Antimicrobial Resistance and Infection Control
+      url: https://aricjournal.biomedcentral.com/articles/most-recent/rss.xml
+      journal: Antimicrob Resist Infect Control
+      enabled: false
+
+  # ---------------------------------------------------------------- societies
+  # Society feeds are the least standardised of all. Add yours here if you find
+  # working URLs; IDSA and ESCMID do not currently advertise public feeds.
+  societies: []

@@ -1,0 +1,76 @@
+{% macro paper(item, show_abstract=true, show_why=true) %}
+<article class="paper {{ item.priority }}">
+  <h3>
+    {% if item.url %}<a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.title }}</a>
+    {% else %}{{ item.title }}{% endif %}
+  </h3>
+
+  <p class="byline">
+    <span class="journal">{{ item.journal }}</span>
+    {% if item.journal_tier %}<span class="jtier {{ item.journal_tier_class }}">{{ item.journal_tier }}</span>{% endif %}
+    {% if item.author_line %}<span class="sep">·</span> {{ item.author_line }}{% endif %}
+    {% if item.published %}<span class="sep">·</span> {{ item.published }}{% endif %}
+  </p>
+
+  <div class="tags">
+    <span class="tag score">{{ item.score }}</span>
+    {% if item.stars %}<span class="tag"><span class="stars">{{ item.stars | stars }}</span></span>{% endif %}
+    {% if item.kind != 'article' %}<span class="tag kind-{{ item.kind }}">{{ item.kind }}</span>{% endif %}
+    {% if item.n_sources > 1 %}<span class="tag">{{ item.n_sources }} sources</span>{% endif %}
+    {% if item.summary and item.summary.design %}<span class="tag">{{ item.summary.design }}</span>{% endif %}
+    {% for label, weight in item.breakdown[:4] %}
+      {% if weight > 0 %}<span class="tag">{{ label }} +{{ weight | round | int }}</span>{% endif %}
+    {% endfor %}
+  </div>
+
+  {% if item.summary %}
+  <div class="appraisal">
+    <p class="bottomline">{{ item.summary.bottom_line }}</p>
+
+    {% if show_why and item.summary.why_it_matters %}
+    <div class="field">
+      <span class="lbl">Why this matters</span>
+      <p>{{ item.summary.why_it_matters }}</p>
+    </div>
+    {% endif %}
+
+    <div class="cols">
+      {% if item.summary.strengths %}
+      <div class="field">
+        <span class="lbl">Strengths</span>
+        <ul>{% for s in item.summary.strengths %}<li>{{ s }}</li>{% endfor %}</ul>
+      </div>
+      {% endif %}
+      {% if item.summary.weaknesses %}
+      <div class="field">
+        <span class="lbl">Weaknesses</span>
+        <ul>{% for w in item.summary.weaknesses %}<li>{{ w }}</li>{% endfor %}</ul>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="verdict">
+      <b>Read the full paper?</b>
+      <span class="{{ item.summary.read_full }}">{{ item.summary.read_full | upper }}</span>
+      {% if item.summary.read_full_reason %}<span>— {{ item.summary.read_full_reason }}</span>{% endif %}
+    </div>
+
+    {% if item.summary.topics %}
+    <div class="tags">
+      {% for t in item.summary.topics %}<span class="tag">{{ t }}</span>{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if show_abstract and item.abstract %}
+  <details class="raw">
+    <summary>Abstract{% if not item.summary %} (not appraised){% endif %}</summary>
+    <p>{{ item.abstract | truncate_words(2200) }}</p>
+  </details>
+  {% elif not item.summary and not item.abstract %}
+  <details class="raw"><summary>No abstract supplied by the source</summary>
+    <p>Only a title was available. Open the link to judge relevance.</p></details>
+  {% endif %}
+</article>
+{% endmacro %}

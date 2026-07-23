@@ -1,0 +1,13 @@
+.venv/
+data/
+out/
+logs/
+__pycache__/
+*.pyc
+
+# Local settings hold the NCBI API key — keep them out of git.
+# Copy config/settings.example.yaml to config/settings.yaml and fill in the key.
+config/settings.yaml
+
+# Per-machine Claude Code permission overrides — not for sharing.
+.claude/settings.local.json

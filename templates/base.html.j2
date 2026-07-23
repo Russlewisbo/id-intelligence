@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title>
+<style>
+  :root {
+    --bg: #fbfaf8;
+    --surface: #ffffff;
+    --surface-2: #f4f2ee;
+    --text: #1c1b19;
+    --muted: #6b6660;
+    --line: #e3dfd8;
+    --accent: #7a3b2e;
+    --accent-soft: #f0e4e0;
+    --critical: #a03027;
+    --high: #b06a1c;
+    --medium: #4a6b8a;
+    --low: #8a8478;
+    --star: #b8860b;
+    --radius: 10px;
+    --maxw: 62rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16151a;
+      --surface: #1e1d23;
+      --surface-2: #26252c;
+      --text: #e8e5e0;
+      --muted: #9d978e;
+      --line: #33313a;
+      --accent: #e0937f;
+      --accent-soft: #33262a;
+      --critical: #e8776b;
+      --high: #e0a457;
+      --medium: #7fa8cc;
+      --low: #8a8478;
+      --star: #e0b955;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
+
+  header.masthead { border-bottom: 2px solid var(--text); padding-bottom: 1rem; margin-bottom: 2rem; }
+  .eyebrow {
+    font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--accent); font-weight: 600; margin: 0 0 .4rem;
+  }
+  h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 .35rem; font-weight: 650; letter-spacing: -.01em; }
+  .masthead .meta { color: var(--muted); font-size: .85rem; margin: 0; }
+
+  .statbar { display: flex; flex-wrap: wrap; gap: 1.75rem; margin: 1.5rem 0 2.5rem; }
+  .stat .n { font-size: 1.6rem; font-weight: 650; line-height: 1; display: block; }
+  .stat .k { font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+  h2.section {
+    font-size: .8rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--muted); font-weight: 650; margin: 2.75rem 0 1rem;
+    padding-bottom: .5rem; border-bottom: 1px solid var(--line);
+  }
+  h2.section .count { color: var(--low); font-weight: 500; }
+  h2.section.critical { color: var(--critical); border-color: var(--critical); }
+  h2.section.high { color: var(--high); }
+
+  article.paper {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--low);
+    border-radius: var(--radius);
+    padding: 1.15rem 1.35rem;
+    margin-bottom: 1rem;
+  }
+  article.paper.critical { border-left-color: var(--critical); }
+  article.paper.high     { border-left-color: var(--high); }
+  article.paper.medium   { border-left-color: var(--medium); }
+
+  .paper h3 { font-size: 1.06rem; line-height: 1.4; margin: 0 0 .45rem; font-weight: 600; }
+  .paper h3 a { color: var(--text); text-decoration: none; border-bottom: 1px solid var(--line); }
+  .paper h3 a:hover { color: var(--accent); border-color: var(--accent); }
+
+  .byline { font-size: .82rem; color: var(--muted); margin: 0 0 .75rem; }
+  .byline .journal { color: var(--text); font-weight: 650; }
+  .byline .sep { opacity: .5; margin: 0 .1rem; }
+
+  /* Journal-quality badge. Colour encodes tier so predatory / unranked venues
+     are visible at a glance when screening. */
+  .jtier {
+    display: inline-block; font-size: .66rem; font-weight: 700;
+    letter-spacing: .03em; text-transform: uppercase;
+    padding: .1rem .45rem; border-radius: 4px; margin-left: .4rem;
+    vertical-align: .05em; white-space: nowrap;
+  }
+  .jtier.tier-top      { background: #1f6f43; color: #fff; }
+  .jtier.tier-core     { background: #2f5d8a; color: #fff; }
+  .jtier.tier-spec     { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); }
+  .jtier.tier-unranked { background: #8a5a10; color: #fff; }
+  .jtier.tier-none     { background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); }
+  @media (prefers-color-scheme: dark) {
+    .jtier.tier-top      { background: #2e8b57; color: #08130b; }
+    .jtier.tier-core     { background: #6fa8dc; color: #0a1522; }
+    .jtier.tier-unranked { background: #e0a457; color: #241505; }
+  }
+
+  .tags { display: flex; flex-wrap: wrap; gap: .35rem; margin: .6rem 0 0; }
+  .tag {
+    font-size: .7rem; padding: .16rem .5rem; border-radius: 999px;
+    background: var(--surface-2); color: var(--muted); border: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  .tag.score { background: var(--accent-soft); color: var(--accent); border-color: transparent; font-weight: 600; }
+  .tag.kind-preprint { color: var(--high); }
+  .tag.kind-trial { color: var(--medium); }
+
+  .stars { color: var(--star); letter-spacing: .1em; font-size: .95rem; }
+
+  .appraisal { margin-top: .95rem; padding-top: .95rem; border-top: 1px dashed var(--line); }
+  .bottomline {
+    font-size: 1rem; line-height: 1.55; margin: 0 0 .8rem;
+    padding-left: .8rem; border-left: 3px solid var(--accent-soft);
+  }
+  .field { margin: .7rem 0 0; }
+  .field .lbl {
+    display: block; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted); font-weight: 650; margin-bottom: .25rem;
+  }
+  .field p { margin: 0; font-size: .92rem; }
+  .field ul { margin: 0; padding-left: 1.15rem; font-size: .92rem; }
+  .field li { margin-bottom: .2rem; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  @media (max-width: 620px) { .cols { grid-template-columns: 1fr; } }
+
+  .verdict {
+    margin-top: .9rem; padding: .55rem .8rem; border-radius: 8px;
+    background: var(--surface-2); font-size: .88rem;
+    display: flex; gap: .6rem; align-items: baseline; flex-wrap: wrap;
+  }
+  .verdict b { text-transform: uppercase; font-size: .7rem; letter-spacing: .1em; color: var(--muted); }
+  .verdict .yes  { color: var(--critical); font-weight: 650; }
+  .verdict .skim { color: var(--high); font-weight: 650; }
+  .verdict .no   { color: var(--muted); font-weight: 650; }
+
+  details.raw { margin-top: .8rem; }
+  details.raw summary {
+    cursor: pointer; font-size: .78rem; color: var(--muted);
+    letter-spacing: .04em; list-style: none;
+  }
+  details.raw summary::before { content: "▸ "; }
+  details.raw[open] summary::before { content: "▾ "; }
+  details.raw p { font-size: .88rem; color: var(--muted); margin: .6rem 0 0; }
+
+  .note {
+    background: var(--surface-2); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: .9rem 1.1rem;
+    font-size: .86rem; color: var(--muted); margin-bottom: 1.25rem;
+  }
+  .note b { color: var(--text); }
+  .empty { color: var(--muted); font-style: italic; padding: 2rem 0; }
+
+  footer { margin-top: 4rem; padding-top: 1.25rem; border-top: 1px solid var(--line);
+           font-size: .78rem; color: var(--muted); }
+  a { color: var(--accent); }
+
+  @media print {
+    :root { --bg: #fff; --surface: #fff; --surface-2: #fff; --text: #000; --muted: #444; --line: #ccc; }
+    body { font-size: 11pt; }
+    article.paper { break-inside: avoid; page-break-inside: avoid; }
+    details.raw { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <p class="eyebrow">{{ subtitle }}</p>
+    <h1>{{ title }}</h1>
+    <p class="meta">Generated {{ generated }}</p>
+  </header>
+
+  {% block content %}{% endblock %}
+
+  <footer>
+    ID Intelligence System — automated surveillance. AI appraisals are decision
+    support, not clinical advice; verify against the full text before acting.
+  </footer>
+</div>
+</body>
+</html>

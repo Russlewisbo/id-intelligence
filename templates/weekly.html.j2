@@ -1,0 +1,19 @@
+{% extends "base.html.j2" %}
+{% import "macros.html.j2" as m %}
+
+{% block content %}
+<div class="statbar">
+  <div class="stat"><span class="n">{{ items | length }}</span><span class="k">must read</span></div>
+  <div class="stat"><span class="n">{{ week_total }}</span><span class="k">records screened</span></div>
+  <div class="stat"><span class="n">{{ start.strftime('%d %b') }}–{{ end.strftime('%d %b') }}</span><span class="k">window</span></div>
+</div>
+
+{% if not items %}
+<p class="empty">No records in this window yet.</p>
+{% endif %}
+
+{% for item in items %}
+<h2 class="section">#{{ loop.index }}</h2>
+{{ m.paper(item, show_abstract=true, show_why=true) }}
+{% endfor %}
+{% endblock %}

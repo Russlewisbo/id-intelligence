@@ -1,0 +1,189 @@
+# ID Intelligence System — runtime settings.
+# Paths are relative to the project root.
+
+db_path: data/idintel.db
+out_dir: out
+log_dir: logs
+
+collect:
+  # How far back the API sources (PubMed, preprints, trials) reach. 3 days gives
+  # a weekend safety margin so a missed run never loses papers.
+  lookback_days: 3
+  # RSS needs a much wider window. A weekly journal's table-of-contents feed
+  # carries items dated a week or more back, so a 3-day filter would silently
+  # drop NEJM, Lancet and every other weekly. Re-seeing an item is free —
+  # deduplication merges it and it does not reappear in the daily digest.
+  rss_lookback_days: 45
+  workers: 12
+  timeout_seconds: 30
+  # NCBI asks that automated clients identify themselves with a contact address.
+  user_agent: "idintel/0.1 (personal literature surveillance; mailto:russ.e.lewis@gmail.com)"
+
+dedupe:
+  # Jaccard similarity over title tokens. 0.90 is tight enough to avoid merging
+  # a trial's primary and secondary publications.
+  title_similarity: 0.90
+  # How far back to look for a duplicate. Preprint -> journal can take months.
+  window_days: 180
+
+# --------------------------------------------------------------------- PubMed
+# Journal coverage is done through PubMed rather than 150 publisher RSS URLs:
+# PubMed returns the structured abstract, MeSH publication types and the DOI,
+# all of which the scorer needs. Journal RSS (see feeds.yaml) is kept for
+# ahead-of-print, which PubMed indexes days to weeks later.
+pubmed:
+  # NCBI key raises the rate limit from 3/s to 10/s.
+  api_key: ""
+  retmax: 200
+  queries:
+    - name: Core ID journals
+      term: >-
+        ("Clin Infect Dis"[jour] OR "J Infect Dis"[jour] OR "Open Forum Infect Dis"[jour]
+        OR "Clin Microbiol Infect"[jour] OR "Lancet Infect Dis"[jour] OR "Lancet Microbe"[jour]
+        OR "Emerg Infect Dis"[jour] OR "J Infect"[jour] OR "Infection"[jour]
+        OR "Int J Infect Dis"[jour] OR "BMC Infect Dis"[jour] OR "Infect Dis Ther"[jour]
+        OR "Curr Opin Infect Dis"[jour] OR "Eur J Clin Microbiol Infect Dis"[jour]
+        OR "Clin Microbiol Rev"[jour] OR "Expert Rev Anti Infect Ther"[jour])
+
+    - name: Antimicrobials and resistance
+      term: >-
+        ("Antimicrob Agents Chemother"[jour] OR "J Antimicrob Chemother"[jour]
+        OR "JAC Antimicrob Resist"[jour] OR "Int J Antimicrob Agents"[jour]
+        OR "J Glob Antimicrob Resist"[jour] OR "Antimicrob Resist Infect Control"[jour]
+        OR "Antibiotics (Basel)"[jour] OR "Antimicrob Steward Healthc Epidemiol"[jour]
+        OR "Diagn Microbiol Infect Dis"[jour] OR "J Clin Microbiol"[jour]
+        OR "Microbiol Spectr"[jour] OR "mBio"[jour])
+
+    - name: Mycology
+      term: >-
+        ("Med Mycol"[jour] OR "Mycoses"[jour] OR "J Fungi (Basel)"[jour]
+        OR "Antimicrob Agents Chemother"[jour] AND (antifungal OR aspergill* OR candid*
+        OR mucormyc* OR cryptococc* OR "invasive mould" OR "invasive mold"))
+        OR (aspergillosis[tiab] OR candidemia[tiab] OR candidaemia[tiab]
+        OR mucormycosis[tiab] OR cryptococcosis[tiab] OR "Candida auris"[tiab]
+        OR rezafungin[tiab] OR ibrexafungerp[tiab] OR olorofim[tiab] OR fosmanogepix[tiab]
+        OR opelconazole[tiab])
+
+    - name: Transplant and immunocompromised host
+      term: >-
+        ("Transpl Infect Dis"[jour] OR "Am J Transplant"[jour] OR "Transplant Cell Ther"[jour]
+        OR "Bone Marrow Transplant"[jour] OR "Clin Transplant"[jour])
+        OR ((transplant*[tiab] OR HSCT[tiab] OR "stem cell"[tiab] OR neutropeni*[tiab]
+        OR "CAR-T"[tiab] OR immunocompromis*[tiab])
+        AND (infection*[tiab] OR prophylax*[tiab] OR antifungal[tiab] OR antibacterial[tiab]
+        OR CMV[tiab] OR cytomegalovirus[tiab] OR "invasive fungal"[tiab]))
+
+    - name: PK/PD and therapeutic drug monitoring
+      term: >-
+        ("Ther Drug Monit"[jour] OR "Clin Pharmacokinet"[jour] OR "Br J Clin Pharmacol"[jour]
+        OR "Pharmacotherapy"[jour])
+        OR ((vancomycin[tiab] OR "beta-lactam"[tiab] OR meropenem[tiab] OR piperacillin[tiab]
+        OR cefepime[tiab] OR voriconazole[tiab] OR posaconazole[tiab] OR isavuconazole[tiab]
+        OR amikacin[tiab] OR polymyxin[tiab] OR colistin[tiab])
+        AND (pharmacokinetic*[tiab] OR pharmacodynamic*[tiab] OR "AUC"[tiab]
+        OR "therapeutic drug monitoring"[tiab] OR "dose optimization"[tiab]
+        OR "dose optimisation"[tiab] OR "Monte Carlo"[tiab] OR "population PK"[tiab]))
+
+    - name: Resistant Gram-negatives
+      term: >-
+        (ESBL[tiab] OR carbapenem-resistant[tiab] OR carbapenemase[tiab] OR CRE[tiab]
+        OR CRAB[tiab] OR "KPC"[tiab] OR "NDM"[tiab] OR "OXA-48"[tiab] OR metallo-beta-lactamase[tiab]
+        OR "difficult-to-treat resistance"[tiab] OR ceftazidime-avibactam[tiab]
+        OR meropenem-vaborbactam[tiab] OR imipenem-relebactam[tiab] OR cefiderocol[tiab]
+        OR ceftolozane[tiab] OR aztreonam-avibactam[tiab] OR sulbactam-durlobactam[tiab]
+        OR zosurabalpin[tiab] OR gepotidacin[tiab])
+
+    - name: Guidelines, trials and evidence synthesis
+      term: >-
+        ((infection*[tiab] OR antimicrobial*[tiab] OR antibiotic*[tiab] OR antifungal[tiab]
+        OR sepsis[tiab] OR bacteraemia[tiab] OR bacteremia[tiab])
+        AND (Guideline[pt] OR "Practice Guideline"[pt] OR Meta-Analysis[pt]
+        OR "Randomized Controlled Trial"[pt] OR "Systematic Review"[pt]))
+
+    - name: High-impact general medicine
+      term: >-
+        ("N Engl J Med"[jour] OR "Lancet"[jour] OR "JAMA"[jour] OR "BMJ"[jour]
+        OR "Ann Intern Med"[jour] OR "Nature"[jour] OR "Science"[jour]
+        OR "Nat Med"[jour] OR "Nat Microbiol"[jour] OR "Nat Rev Microbiol"[jour]
+        OR "Sci Transl Med"[jour] OR "Cell Host Microbe"[jour] OR "JAMA Intern Med"[jour])
+        AND (infect*[tiab] OR antimicrobial*[tiab] OR antibiotic*[tiab] OR antifungal[tiab]
+        OR sepsis[tiab] OR vaccin*[tiab] OR resistance[tiab] OR microbiome[tiab])
+
+# ------------------------------------------------------------------ preprints
+preprints:
+  enabled: true
+  servers: [biorxiv, medrxiv]
+  # Anything in these subject categories is kept outright.
+  categories:
+    - microbiology
+    - infectious diseases
+    - immunology
+    - epidemiology
+    - pharmacology and therapeutics
+  # Anything matching these patterns is kept regardless of category.
+  keywords:
+    - "antifungal|aspergill|candida|mucormyc|cryptococc"
+    - "antimicrobial resistance|carbapenem|ESBL|MRSA|beta-lactamase"
+    - "sepsis|bacteraemia|bacteremia|neutropenic fever"
+    - "stem cell transplant|HSCT|allogeneic|immunocompromised"
+    - "pharmacokinetic|pharmacodynamic|therapeutic drug monitoring"
+
+# --------------------------------------------------------------------- trials
+trials:
+  enabled: true
+  # Free-text terms match far too loosely here (a plain "transplant infection OR
+  # ..." query returns cardiology trials). AREA[...] targets the condition and
+  # intervention fields specifically, which cuts the noise by roughly 10x.
+  queries:
+    - name: Antifungal trials
+      term: >-
+        AREA[ConditionSearch](aspergillosis OR candidemia OR candidiasis OR mucormycosis
+        OR cryptococcal OR "invasive fungal")
+        OR AREA[InterventionSearch](antifungal OR voriconazole OR posaconazole
+        OR isavuconazole OR rezafungin OR olorofim OR fosmanogepix OR ibrexafungerp
+        OR amphotericin)
+    - name: Antibacterial trials
+      term: >-
+        AREA[ConditionSearch](bacteremia OR sepsis OR "bloodstream infection"
+        OR "urinary tract infection" OR pneumonia OR "antimicrobial resistance"
+        OR "carbapenem-resistant")
+        OR AREA[InterventionSearch](cefiderocol OR "ceftazidime-avibactam"
+        OR "meropenem-vaborbactam" OR "imipenem-relebactam" OR "sulbactam-durlobactam"
+        OR gepotidacin OR zosurabalpin OR antibacterial)
+    - name: Transplant ID trials
+      term: >-
+        AREA[ConditionSearch](cytomegalovirus OR "febrile neutropenia"
+        OR "invasive fungal infection" OR "transplant infection"
+        OR "graft versus host disease" OR "stem cell transplantation")
+        AND AREA[ConditionSearch](infection OR cytomegalovirus OR neutropenia OR fungal)
+
+# ------------------------------------------------------------------- appraisal
+summary:
+  model: sonnet
+  # Only records scoring at least this much are sent to the model.
+  min_score: 22
+  # Hard ceiling on model calls per run — the cost/time guard rail.
+  max_per_run: 35
+  workers: 3
+  timeout_seconds: 300
+  # Strip inherited ANTHROPIC_BASE_URL/AUTH_TOKEN so the child CLI uses your own
+  # credentials rather than a parent agent session's proxy.
+  clean_env: true
+
+report:
+  open_in_browser: false
+  # Relevance gate for the daily digest. When true, a record must have matched at
+  # least one *topical* ID rule (see `topical: true` rules in scoring.yaml) to
+  # appear. This removes papers that scored only on methodology or journal tier
+  # — the "RCT about wine and driving" problem. Set false to see everything.
+  daily_require_topical: true
+  # Safety net: keep a record even with no topical hit if it scores at least this
+  # high, so a gap in the topical rules can never silently hide a big paper.
+  daily_keep_score: 25
+  # Cap cards per priority band in the daily digest so the page stays readable.
+  # 0 means unlimited — never truncate what actually matters.
+  daily_max_per_group:
+    critical: 0
+    high: 0
+    medium: 40
+    low: 20
