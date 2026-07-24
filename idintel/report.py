@@ -81,6 +81,8 @@ def view(row) -> dict:
         "summary": summary,
         "stars": row["stars"] or (summary or {}).get("stars"),
         "summary_error": row["summary_error"],
+        "archived_at": row["archived_at"],
+        "zotero_key": row["zotero_key"],
     }
 
 

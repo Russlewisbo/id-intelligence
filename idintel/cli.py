@@ -107,6 +107,72 @@ def cmd_summarize(args) -> int:
     return 0
 
 
+def cmd_serve(args) -> int:
+    from . import serve as serve_mod
+    cfg = Config.load()
+    httpd = serve_mod.serve(cfg, host=args.host, port=args.port)
+    url = f"http://{args.host}:{args.port}/"
+    _log(f"{GREEN}serving reports{RESET} at {BOLD}{url}{RESET}")
+    _log(f"{DIM}open that URL; Archive buttons send papers to Zotero. Ctrl-C to stop.{RESET}")
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        _log("stopping")
+        httpd.shutdown()
+    return 0
+
+
+def cmd_zotero_check(args) -> int:
+    from .zotero import Zotero, ZoteroConfig, ZoteroError
+    cfg = Config.load()
+    print(f"\n{BOLD}Zotero{RESET}")
+    try:
+        zcfg = ZoteroConfig.from_settings(cfg.settings)
+    except ZoteroError as exc:
+        print(f"  {RED}✗{RESET} {exc}")
+        print(f"  {DIM}Add to config/settings.yaml:{RESET}")
+        print(f"  {DIM}  zotero:{RESET}")
+        print(f"  {DIM}    api_key: \"...\"      # zotero.org/settings/keys, needs library:write{RESET}")
+        print(f"  {DIM}    library_id: \"000000\" # your numeric userID, shown on that page{RESET}")
+        return 1
+
+    print(f"  key ...{zcfg.api_key[-4:]}, library {zcfg.library_type}/{zcfg.library_id}, "
+          f"collection {zcfg.collection!r}")
+    info = Zotero(zcfg).check()
+    if info.get("ok"):
+        print(f"  {GREEN}✓{RESET} authenticated; collection ready (key {info['collection_key']})")
+        if not args.no_write:
+            _zotero_write_test(cfg, zcfg)
+    else:
+        print(f"  {RED}✗{RESET} {info.get('error')}")
+        return 1
+    print()
+    return 0
+
+
+def _zotero_write_test(cfg, zcfg) -> None:
+    """Create and then trash a throwaway item to prove the write path."""
+    from .zotero import Zotero, ZoteroError
+    zot = Zotero(zcfg)
+    item = {
+        "itemType": "journalArticle",
+        "title": "[idintel write test — safe to delete]",
+        "creators": [{"creatorType": "author", "name": "idintel self-test"}],
+        "collections": [zot.collection_key()],
+        "tags": [{"tag": zcfg.tag}],
+    }
+    try:
+        result = zot.zot.create_items([item])
+        key = result["successful"]["0"]["key"]
+        print(f"  {GREEN}✓{RESET} write test created item {key}; trashing it…")
+        zot.zot.delete_item(zot.zot.item(key))
+        print(f"  {GREEN}✓{RESET} write path works end to end")
+    except ZoteroError as exc:
+        print(f"  {RED}✗{RESET} write failed: {exc}")
+    except Exception as exc:
+        print(f"  {RED}✗{RESET} write failed: {exc}")
+
+
 def cmd_retry(args) -> int:
     cfg, db = _open(args)
     row = db.one("SELECT COUNT(*) n FROM records WHERE summary_error IS NOT NULL")
@@ -276,6 +342,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("retry", help="clear appraisal errors so they retry next run")
     p.set_defaults(func=cmd_retry)
+
+    p = sub.add_parser("serve", help="serve reports + Zotero archive buttons locally")
+    p.add_argument("--host", default="127.0.0.1")
+    p.add_argument("--port", type=int, default=8791)
+    p.set_defaults(func=cmd_serve)
+
+    p = sub.add_parser("zotero-check", help="verify the Zotero API key and collection")
+    p.add_argument("--no-write", action="store_true", help="skip the create/delete write test")
+    p.set_defaults(func=cmd_zotero_check)
 
     p = sub.add_parser("top", help="print the highest-scoring recent records")
     p.add_argument("--days", type=int, default=7)

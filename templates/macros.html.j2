@@ -1,5 +1,12 @@
 {% macro paper(item, show_abstract=true, show_why=true) %}
-<article class="paper {{ item.priority }}">
+<article class="paper {{ item.priority }}{% if item.archived_at %} archived{% endif %}"
+         data-record-id="{{ item.id }}">
+  <button class="zbtn" type="button"
+          onclick="idintelArchive(this, {{ item.id }})"
+          {% if item.archived_at %}data-archived="1"{% endif %}>
+    <span class="zbtn-idle">＋ Zotero</span>
+    <span class="zbtn-done">✓ In Zotero</span>
+  </button>
   <h3>
     {% if item.url %}<a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.title }}</a>
     {% else %}{{ item.title }}{% endif %}

@@ -170,6 +170,19 @@ summary:
   # credentials rather than a parent agent session's proxy.
   clean_env: true
 
+# ---------------------------------------------------------------------- Zotero
+# Powers the "＋ Zotero" archive buttons in the reports (via `idintel serve`).
+# Writes go through the Zotero Web API, so items appear in your desktop library
+# on the next sync. Create a key at https://www.zotero.org/settings/keys with
+# "Allow library write access"; library_id is your numeric userID shown there.
+# This file is git-ignored, so the key stays local. Run `idintel zotero-check`.
+zotero:
+  api_key: ""
+  library_id: ""          # numeric userID, e.g. "1234567"
+  library_type: user      # "user", or "group" for a shared group library
+  collection: "ID Intelligence"
+  tag: idintel            # tag applied to every archived item
+
 report:
   open_in_browser: false
   # Relevance gate for the daily digest. When true, a record must have matched at

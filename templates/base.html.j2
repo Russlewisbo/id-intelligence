@@ -71,13 +71,39 @@
   h2.section.high { color: var(--high); }
 
   article.paper {
+    position: relative;
     background: var(--surface);
     border: 1px solid var(--line);
     border-left: 3px solid var(--low);
     border-radius: var(--radius);
     padding: 1.15rem 1.35rem;
     margin-bottom: 1rem;
+    transition: opacity .25s ease;
   }
+
+  /* Send-to-Zotero button, top-right of each card. */
+  .zbtn {
+    position: absolute; top: .9rem; right: 1rem;
+    font: inherit; font-size: .72rem; font-weight: 600;
+    padding: .28rem .6rem; border-radius: 6px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--surface-2); color: var(--accent);
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .zbtn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .zbtn:disabled { cursor: default; opacity: .8; }
+  .zbtn .zbtn-done { display: none; }
+  .zbtn[data-archived] { color: var(--low); border-color: transparent; background: transparent; }
+  .zbtn[data-archived]:hover { background: transparent; color: var(--low); }
+  .zbtn[data-archived] .zbtn-idle { display: none; }
+  .zbtn[data-archived] .zbtn-done { display: inline; }
+  .zbtn.zbtn-error { color: var(--critical); border-color: var(--critical); }
+
+  /* A card already archived to Zotero is dimmed so it is easy to skip. */
+  article.paper.archived { opacity: .48; }
+  article.paper.archived:hover { opacity: .85; }
+
+  /* Leave room for the button so it never overlaps the title. */
+  .paper h3 { padding-right: 6.5rem; }
   article.paper.critical { border-left-color: var(--critical); }
   article.paper.high     { border-left-color: var(--high); }
   article.paper.medium   { border-left-color: var(--medium); }
@@ -189,7 +215,72 @@
   <footer>
     ID Intelligence System — automated surveillance. AI appraisals are decision
     support, not clinical advice; verify against the full text before acting.
+    <span id="idintel-conn"></span>
   </footer>
 </div>
+
+<script>
+// The Archive buttons need the local companion server (`idintel serve`). When
+// this page is opened through that server the API is same-origin; when opened
+// as a file:// the server is reached at its default localhost port.
+(function () {
+  var SERVER = "http://127.0.0.1:8791";
+  var API = (location.protocol === "http:" || location.protocol === "https:")
+    ? "" : SERVER;
+
+  function setArchived(btn) {
+    btn.setAttribute("data-archived", "1");
+    btn.classList.remove("zbtn-error");
+    btn.disabled = false;
+    var card = btn.closest("article.paper");
+    if (card) card.classList.add("archived");
+  }
+
+  window.idintelArchive = function (btn, id) {
+    if (btn.getAttribute("data-archived")) return;   // already sent
+    btn.disabled = true;
+    var idle = btn.querySelector(".zbtn-idle");
+    var original = idle ? idle.textContent : "";
+    if (idle) idle.textContent = "…";
+
+    fetch(API + "/api/archive", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: id })
+    })
+    .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+    .then(function (res) {
+      if (res.ok && res.j.ok) { setArchived(btn); }
+      else { throw new Error((res.j && res.j.error) || "archive failed"); }
+    })
+    .catch(function (err) {
+      btn.disabled = false;
+      btn.classList.add("zbtn-error");
+      if (idle) idle.textContent = original;
+      var msg = String(err.message || err);
+      if (/Failed to fetch|NetworkError/i.test(msg)) {
+        msg = "Start the server first:  idintel serve";
+      }
+      btn.title = msg;
+      alert("Could not send to Zotero.\n\n" + msg);
+    });
+  };
+
+  // Surface whether the server (and Zotero) are reachable, once per page load.
+  fetch(API + "/api/status")
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      var el = document.getElementById("idintel-conn");
+      if (!el) return;
+      if (!j.zotero_configured) {
+        el.textContent = " · Zotero not configured (see idintel zotero-check).";
+      }
+    })
+    .catch(function () {
+      var el = document.getElementById("idintel-conn");
+      if (el) el.textContent = " · Archive buttons need `idintel serve` running.";
+    });
+})();
+</script>
 </body>
 </html>

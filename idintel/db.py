@@ -43,7 +43,9 @@ CREATE TABLE IF NOT EXISTS records (
     stars           INTEGER,
     summary_error   TEXT,
     topical         INTEGER NOT NULL DEFAULT 0,
-    journal_tier    TEXT
+    journal_tier    TEXT,
+    archived_at     TEXT,
+    zotero_key      TEXT
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_records_doi  ON records(doi)  WHERE doi  IS NOT NULL;
@@ -97,6 +99,8 @@ class Database:
         additions = {
             "topical": "INTEGER NOT NULL DEFAULT 0",
             "journal_tier": "TEXT",
+            "archived_at": "TEXT",   # when sent to Zotero
+            "zotero_key": "TEXT",    # the created Zotero item key
         }
         for column, ddl in additions.items():
             if column not in existing:

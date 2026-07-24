@@ -84,7 +84,48 @@ at the next boot. To let them run when booted but logged out:
 
 ---
 
-## Commands
+## Send papers to Zotero
+
+Each card in a report has a **＋ Zotero** button. Click it and the paper is added
+to your Zotero library (into an *ID Intelligence* collection), and the card is
+dimmed with a **✓ In Zotero** marker so you can see at a glance what you've
+already filed. That "sent" state lives in the database, so it persists when the
+reports regenerate each morning.
+
+This needs two one-time setup steps:
+
+**1. A Zotero API key.** At [zotero.org/settings/keys](https://www.zotero.org/settings/keys),
+create a key with *Allow library write access*. That page also shows your
+numeric **userID**. Put both in `config/settings.yaml` (git-ignored):
+
+```yaml
+zotero:
+  api_key: "xxxxxxxxxxxxxxxxxxxxxxxx"
+  library_id: "1234567"       # your numeric userID
+  collection: "ID Intelligence"
+```
+
+Verify it — this authenticates, ensures the collection exists, and does a
+create-then-delete write test:
+
+```bash
+./idintel.sh zotero-check
+```
+
+**2. Run the local server** whenever you want the buttons to work:
+
+```bash
+./idintel.sh serve
+```
+
+Then open **http://localhost:8791** instead of the file directly. The buttons
+call this local server, which holds the API key (it never touches the HTML) and
+writes to Zotero on your behalf.
+
+Writes go through the Zotero Web API, so an archived paper appears in your
+desktop Zotero **on the next sync** — automatic if you have Zotero sync enabled.
+To run the server in the background permanently, the same systemd pattern as the
+timers applies; ask if you want a `idintel-serve.service` unit.
 
 ```bash
 ./idintel.sh daily              # collect + appraise + digest
@@ -96,6 +137,8 @@ at the next boot. To let them run when booted but logged out:
 ./idintel.sh rescore            # re-apply scoring rules to everything
 ./idintel.sh show 1234          # dump one record as JSON
 ./idintel.sh doctor -v          # per-source health
+./idintel.sh serve              # local server for the Zotero archive buttons
+./idintel.sh zotero-check       # verify the Zotero key + collection
 ```
 
 Reports land in `out/`, with `out/latest-daily.html` always pointing at the
@@ -189,6 +232,8 @@ idintel/
   score.py    rule compilation and scoring
   summarize.py  claude -p subprocess, JSON schema, caching
   report.py   Jinja2 → self-contained HTML
+  serve.py    local companion server (reports + Zotero archive API)
+  zotero.py   Zotero Web API client (record → journalArticle item)
   net.py      retry with jittered backoff (NCBI returns transient 5xx)
 config/       settings.yaml  feeds.yaml  scoring.yaml
 templates/    base + daily/weekly/monthly + shared card macro
