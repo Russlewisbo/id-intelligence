@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.idintel.daily</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/russelllewis/Documents/GitHub/id-intelligence/idintel.sh</string>
+        <string>daily</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/russelllewis/Documents/GitHub/id-intelligence</string>
+
+    <!-- launchd starts jobs with a bare PATH; add ~/.local/bin so the appraisal
+         subprocess can find the `claude` CLI, plus Homebrew for good measure. -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/russelllewis/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <!-- 06:30 every day. If the Mac is asleep at 06:30, launchd runs the job
+         once shortly after it wakes (the launchd equivalent of Persistent=true). -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>6</integer>
+        <key>Minute</key>
+        <integer>30</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/Users/russelllewis/Documents/GitHub/id-intelligence/logs/daily.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/russelllewis/Documents/GitHub/id-intelligence/logs/daily.log</string>
+
+    <!-- Low priority, like Nice=10 in the systemd unit. -->
+    <key>Nice</key>
+    <integer>10</integer>
+    <key>ProcessType</key>
+    <string>Background</string>
+</dict>
+</plist>
