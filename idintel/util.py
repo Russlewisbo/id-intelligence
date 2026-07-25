@@ -31,6 +31,27 @@ def strip_html(value: str | None) -> str:
     return _WS_RE.sub(" ", text).strip()
 
 
+_BYLINE_SPLIT_RE = re.compile(r"\s*(?:,|;| and | & )\s*")
+
+
+def split_byline(names: list[str]) -> list[str]:
+    """Normalise author entries to one person per element.
+
+    Feeds and other sources sometimes cram a whole byline into a single string
+    ("Jan Styczynski, Gloria Tridello, Nina Knelange, ..."). A genuine
+    multi-author byline splits into three or more parts, which we break apart; a
+    lone "Last, First" author is only two parts and is left intact.
+    """
+    out: list[str] = []
+    for name in names:
+        name = (name or "").strip()
+        if not name:
+            continue
+        parts = [p for p in _BYLINE_SPLIT_RE.split(name) if p]
+        out.extend(parts if len(parts) >= 3 else [name])
+    return out
+
+
 def norm_doi(value: str | None) -> str | None:
     """Canonicalise a DOI: bare, lowercase, no resolver prefix."""
     if not value:
