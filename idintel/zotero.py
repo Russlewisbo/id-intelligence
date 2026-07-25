@@ -18,6 +18,16 @@ from .db import loads
 
 COLLECTION_CACHE_KEY = "_idintel_collection_key"
 
+# Zotero refuses to sync a creator name longer than 255 characters. Author
+# strings are split into one name per creator (util.split_byline) and then
+# clamped to this limit as a hard backstop against any single over-long name.
+_CREATOR_NAME_MAX = 255
+
+
+def _expand_authors(authors: list[str]) -> list[str]:
+    """One creator per author, each clamped to Zotero's sync-name limit."""
+    return [name[:_CREATOR_NAME_MAX] for name in util.split_byline(authors)]
+
 
 class ZoteroError(RuntimeError):
     pass
@@ -95,7 +105,7 @@ class Zotero:
         (preprint, trial) is preserved in the journal name and abstract, which
         avoids per-item-type field-validation pitfalls.
         """
-        authors = loads(row["authors"], [])
+        authors = _expand_authors(loads(row["authors"], []))
         creators = [{"creatorType": "author", "name": a} for a in authors] or [
             {"creatorType": "author", "name": "[No author listed]"}
         ]

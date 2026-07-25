@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.idintel.monthly</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/russelllewis/Documents/GitHub/id-intelligence/idintel.sh</string>
+        <string>monthly</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/russelllewis/Documents/GitHub/id-intelligence</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/russelllewis/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <!-- 07:30 on the 1st of each month. -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Day</key>
+        <integer>1</integer>
+        <key>Hour</key>
+        <integer>7</integer>
+        <key>Minute</key>
+        <integer>30</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/Users/russelllewis/Documents/GitHub/id-intelligence/logs/monthly.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/russelllewis/Documents/GitHub/id-intelligence/logs/monthly.log</string>
+
+    <key>Nice</key>
+    <integer>10</integer>
+    <key>ProcessType</key>
+    <string>Background</string>
+</dict>
+</plist>

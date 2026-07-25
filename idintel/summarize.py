@@ -1,8 +1,8 @@
 """Abstract appraisal via the Claude Code CLI in headless mode.
 
-Runs ``claude -p`` as a subprocess with a JSON schema so the output is
-structured rather than prose we have to parse. Results are cached in SQLite,
-so a paper is never appraised twice.
+Runs ``claude -p`` as a subprocess and instructs the model to emit a single
+JSON object, which we parse and validate against the required fields. Results
+are cached in SQLite, so a paper is never appraised twice.
 """
 
 from __future__ import annotations
@@ -84,6 +84,28 @@ surrogate endpoints, external validity, industry funding), not filler.
 subgroup; 3 = solid, worth knowing; 2 = narrow or preliminary; 1 = minimal \
 clinical relevance.
 - Preprints are not peer reviewed; weight them accordingly."""
+
+# The installed Claude CLI has no --json-schema flag, so structure is requested
+# in the prompt instead and validated after parsing (see _extract_json and the
+# required-fields check in call_claude).
+OUTPUT_INSTRUCTIONS = """
+Respond with a single JSON object and nothing else: no prose, no explanation, \
+and no Markdown code fences before or after it. Use exactly these keys:
+
+{
+  "bottom_line": "one or two sentences: what a clinician should now do or believe differently",
+  "why_it_matters": "two to three sentences placing the finding in current ID practice",
+  "strengths": ["2-4 concrete methodological strengths"],
+  "weaknesses": ["2-4 concrete limitations that temper the conclusion"],
+  "read_full": "yes | skim | no",
+  "read_full_reason": "one sentence",
+  "stars": 3,
+  "topics": ["2-5 short topic tags"],
+  "design": "study design in a few words, e.g. 'multicentre RCT, n=527'"
+}
+
+"stars" is an integer 1-5. Every key except "read_full_reason" is required. \
+The output must be valid JSON."""
 
 
 class SummaryError(RuntimeError):
@@ -169,10 +191,8 @@ def call_claude(prompt: str, cfg) -> dict:
         "claude", "-p",
         "--model", cfg.settings.summary_model,
         "--output-format", "json",
-        "--json-schema", json.dumps(SCHEMA),
-        "--system-prompt", SYSTEM_PROMPT,
+        "--append-system-prompt", SYSTEM_PROMPT + "\n" + OUTPUT_INSTRUCTIONS,
         "--strict-mcp-config",
-        "--disable-slash-commands",
         "--disallowed-tools", "Bash,Edit,Write,Read,WebFetch,WebSearch,Task,Glob,Grep",
     ]
 

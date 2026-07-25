@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.idintel.weekly</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/russelllewis/Documents/GitHub/id-intelligence/idintel.sh</string>
+        <string>weekly</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/russelllewis/Documents/GitHub/id-intelligence</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/russelllewis/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <!-- 07:15 Friday (Weekday 5), after the daily run has collected the day's papers. -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>5</integer>
+        <key>Hour</key>
+        <integer>7</integer>
+        <key>Minute</key>
+        <integer>15</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/Users/russelllewis/Documents/GitHub/id-intelligence/logs/weekly.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/russelllewis/Documents/GitHub/id-intelligence/logs/weekly.log</string>
+
+    <key>Nice</key>
+    <integer>10</integer>
+    <key>ProcessType</key>
+    <string>Background</string>
+</dict>
+</plist>
