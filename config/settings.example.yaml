@@ -205,8 +205,11 @@ report:
     high: 0
     medium: 40
     low: 20
-  # Journals to drop from the digest entirely, whatever they score — for
-  # predatory / low-quality venues. Case-insensitive substring match on the
-  # journal name, so "antibiotics (basel)" targets the MDPI journal without
-  # touching "J Antimicrob Chemother". Leave empty to block nothing.
+  # Strongest quality filter: when true, the daily digest shows ONLY journals
+  # that matched a tier in scoring.yaml (Top general / Core ID / Specialist /
+  # Agency) and drops every "Unranked" journal — the low-quality long tail. To
+  # add a journal you read, put it in the appropriate journal_tiers list.
+  ranked_journals_only: false
+  # Extra hard blocks (applied even to ranked journals). Case-insensitive
+  # substring match on the journal name. Leave empty to block nothing.
   blocked_journals: []

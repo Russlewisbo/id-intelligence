@@ -255,8 +255,13 @@ journal_tiers:
             "antimicrob resist infect control", "infect control hosp epidemiol",
             "j clin microbiol", "microbiol spectr", "ther drug monit",
             "clin pharmacokinet", "j infect", "int j infect dis",
-            "eur j clin microbiol", "j hosp infect", "bone marrow transplant",
-            "blood adv", "intensive care med", "crit care"]
+            "eur j clin microbiol", "j hosp infect"]
+    # NB: "crit care", "intensive care med", "bone marrow transplant" and
+    # "blood adv" were removed — as substrings they tiered a whole family of
+    # non-ID critical-care / haematology journals (Nurs Crit Care, J Intensive
+    # Care Med, Blood Adv…), which then leaked ICU/oncology content into the
+    # digest. ID papers from those venues are still caught by the topical rules
+    # when they also appear in a tiered ID journal.
 
   - label: Agency / society
     weight: 6

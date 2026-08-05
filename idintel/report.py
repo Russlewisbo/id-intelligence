@@ -128,6 +128,15 @@ def build_daily(db, cfg, day: date | None = None) -> Path:
         items = [i for i in items
                  if not any(b in (i["journal"] or "").lower() for b in blocked)]
 
+    # Journal allowlist: when on, keep only journals that matched a recognised
+    # tier in scoring.yaml (Top general / Core ID / Specialist / Agency) and drop
+    # everything "Unranked" — the long tail of low-quality venues the reader
+    # never wants. This is the strongest quality filter; it also renders a
+    # methodology-only, non-topical review from an unknown journal harmless.
+    if cfg.settings.report.get("ranked_journals_only", False):
+        items = [i for i in items
+                 if i["journal_tier"] and i["journal_tier"] != "Unranked"]
+
     # Relevance gate: a record only belongs in the digest if it hit at least one
     # topical ID rule. This drops the ~60% of collected records that score only
     # on methodology or journal tier — e.g. an RCT about wine and driving, which
