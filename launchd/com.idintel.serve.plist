@@ -9,7 +9,7 @@
          handles the "＋ Zotero" archive buttons. -->
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/russelllewis/Documents/GitHub/id-intelligence/idintel.sh</string>
+        <string>/Users/russelllewis/id-intelligence/idintel.sh</string>
         <string>serve</string>
         <string>--host</string>
         <string>127.0.0.1</string>
@@ -18,7 +18,7 @@
     </array>
 
     <key>WorkingDirectory</key>
-    <string>/Users/russelllewis/Documents/GitHub/id-intelligence</string>
+    <string>/Users/russelllewis/id-intelligence</string>
 
     <key>EnvironmentVariables</key>
     <dict>
@@ -39,9 +39,9 @@
     <integer>5</integer>
 
     <key>StandardOutPath</key>
-    <string>/Users/russelllewis/Documents/GitHub/id-intelligence/logs/serve.log</string>
+    <string>/Users/russelllewis/id-intelligence/logs/serve.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/russelllewis/Documents/GitHub/id-intelligence/logs/serve.log</string>
+    <string>/Users/russelllewis/id-intelligence/logs/serve.log</string>
 
     <key>Nice</key>
     <integer>10</integer>

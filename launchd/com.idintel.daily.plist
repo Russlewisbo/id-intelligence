@@ -7,12 +7,12 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/russelllewis/Documents/GitHub/id-intelligence/idintel.sh</string>
+        <string>/Users/russelllewis/id-intelligence/idintel.sh</string>
         <string>daily</string>
     </array>
 
     <key>WorkingDirectory</key>
-    <string>/Users/russelllewis/Documents/GitHub/id-intelligence</string>
+    <string>/Users/russelllewis/id-intelligence</string>
 
     <!-- launchd starts jobs with a bare PATH; add ~/.local/bin so the appraisal
          subprocess can find the `claude` CLI, plus Homebrew for good measure. -->
@@ -33,9 +33,9 @@
     </dict>
 
     <key>StandardOutPath</key>
-    <string>/Users/russelllewis/Documents/GitHub/id-intelligence/logs/daily.log</string>
+    <string>/Users/russelllewis/id-intelligence/logs/daily.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/russelllewis/Documents/GitHub/id-intelligence/logs/daily.log</string>
+    <string>/Users/russelllewis/id-intelligence/logs/daily.log</string>
 
     <!-- Low priority, like Nice=10 in the systemd unit. -->
     <key>Nice</key>
