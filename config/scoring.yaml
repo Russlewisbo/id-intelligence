@@ -25,9 +25,15 @@ rules:
       - ["\\bHSCT\\b", "\\bHCT\\b", "stem[- ]cell transplant", "allogeneic transplant",
          "bone marrow transplant", "allo-?SCT", "\\bCAR-?T\\b", "haematopoietic",
          "hematopoietic"]
+      # Infection signal. Deliberately excludes bare "prophylax" and "GVHD":
+      # graft-versus-host disease is an immune/oncology complication, not an
+      # infection, and "GVHD prophylaxis" was pulling pure-transplant papers in.
+      # Real antimicrobial prophylaxis still fires via antifungal/antibacterial/
+      # antiviral/antimicrob/CMV.
       - ["infect", "\\bfever\\b", "neutropeni", "\\bCMV\\b", "cytomegalovirus",
-         "prophylax", "antifungal", "antibacterial", "\\bGVHD\\b", "sepsis",
-         "bacteraemia", "bacteremia", "viraemia", "viremia"]
+         "antifungal", "antibacterial", "antiviral", "antimicrob", "\\bPJP\\b",
+         "\\bPCP\\b", "sepsis", "bacteraemia", "bacteremia", "fungaemia",
+         "viraemia", "viremia", "\\bBSI\\b"]
 
   - id: aspergillus
     topical: true
@@ -133,6 +139,20 @@ rules:
              "clinical practice guideline", "\\bIDSA\\b guidance", "\\bESCMID\\b guideline",
              "\\bECIL\\b", "recommendations of the", "position paper"]
 
+  - id: review_article
+    label: Review
+    # Surfaces state-of-the-art / narrative reviews, which earn no methodology
+    # credit otherwise. Weighted so a review in a tiered journal clears the
+    # daily digest's keep floor on its own: 22 + Top-general(5)=27, + Core-ID(4)
+    # =26, + Agency(6)=28 — while a review in an unranked or Specialist journal
+    # stays below the floor unless it also fires a topical ID rule. This ties to
+    # report.daily_keep_score (25); raise that and major reviews drop out again.
+    # Not marked topical, so it does not by itself force every review in.
+    weight: 22
+    fields: [pub_types, title]
+    any_of: ["\\bReview\\b", "state[- ]of[- ]the[- ]art", "narrative review",
+             "scoping review", "current concepts", "\\bseminar\\b"]
+
   - id: meta_analysis
     label: Meta-analysis
     weight: 8
@@ -164,12 +184,23 @@ rules:
       - ["patients", "participants", "episodes", "isolates", "cohort"]
 
   # ---------------------------------------------------------- negative signals
+  - id: trial_registration
+    label: Trial registration
+    # ClinicalTrials.gov registry entries (their journal is literally
+    # "ClinicalTrials.gov"). The reader prefers published reviews over registry
+    # entries, so push these down: they still surface when they fire a topical
+    # ID rule, but rank below reviews and published trials.
+    weight: -12
+    fields: [journal]
+    any_of: ["ClinicalTrials\\.gov"]
+
   - id: case_report
     label: Case report
     weight: -6
     fields: [title, abstract, pub_types]
     any_of: ["Case Reports?", "a case of", "case series of \\d", "we report a case"]
-    none_of: ["case series of \\d{3,}", "Guideline"]
+    # A review that merely discusses case reports is not itself a case report.
+    none_of: ["case series of \\d{3,}", "Guideline", "\\bReview\\b"]
 
   - id: non_human
     label: Non-clinical / animal model

@@ -118,6 +118,16 @@ def build_daily(db, cfg, day: date | None = None) -> Path:
     )
     items = [view(r) for r in rows]
 
+    # Journal blocklist: predatory / low-quality venues the reader never wants
+    # to see. Dropped up front, before the relevance gate, so a blocked journal
+    # cannot slip through on a topical hit. Case-insensitive substring match.
+    blocked = [b.strip().lower()
+               for b in (cfg.settings.report.get("blocked_journals") or [])
+               if b.strip()]
+    if blocked:
+        items = [i for i in items
+                 if not any(b in (i["journal"] or "").lower() for b in blocked)]
+
     # Relevance gate: a record only belongs in the digest if it hit at least one
     # topical ID rule. This drops the ~60% of collected records that score only
     # on methodology or journal tier — e.g. an RCT about wine and driving, which
