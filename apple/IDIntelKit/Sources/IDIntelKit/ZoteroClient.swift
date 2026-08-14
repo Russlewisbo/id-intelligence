@@ -146,6 +146,13 @@ public enum Zotero {
             URL(string: "https://api.zotero.org/\(settings.libraryType)s/\(settings.libraryID)")!
         }
 
+        /// Builds the request URL. NOTE: must NOT use `URL.appending(path:)`
+        /// with a query string — it percent-encodes the `?` into a literal
+        /// path character, which Zotero answers with an HTML 404 page.
+        func url(for path: String) -> URL {
+            URL(string: "\(base.absoluteString)/\(path)")!
+        }
+
         /// Finds the target collection (top-level, by name), creating it if
         /// missing — same behaviour as `zotero.py`. Returns its key.
         public func ensureCollection() async throws -> String {
@@ -194,7 +201,7 @@ public enum Zotero {
 
         private func request(_ method: String, _ path: String,
                              body: Any? = nil, rawBody: Data? = nil) async throws -> Any {
-            var req = URLRequest(url: base.appending(path: path))
+            var req = URLRequest(url: url(for: path))
             req.httpMethod = method
             req.setValue(settings.apiKey, forHTTPHeaderField: "Zotero-API-Key")
             req.setValue("3", forHTTPHeaderField: "Zotero-API-Version")

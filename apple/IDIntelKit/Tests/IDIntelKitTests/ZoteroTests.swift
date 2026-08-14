@@ -110,6 +110,33 @@ final class ZoteroTests: XCTestCase {
         XCTAssertEqual(settings.tag, "idintel")
     }
 
+    // ------------------------------------------------------- URL building
+
+    func testQueryStringSurvivesURLBuilding() {
+        // Regression: URL.appending(path:) percent-encoded the "?" so Zotero
+        // returned its HTML 404 page for every request.
+        let client = Zotero.Client(settings: .init(apiKey: "k", libraryID: "5339168"))
+        XCTAssertEqual(client.url(for: "collections?limit=100").absoluteString,
+                       "https://api.zotero.org/users/5339168/collections?limit=100")
+        XCTAssertEqual(client.url(for: "items").absoluteString,
+                       "https://api.zotero.org/users/5339168/items")
+    }
+
+    /// Live round-trip against the real account — network + real credentials,
+    /// so opt-in only: `ZOTERO_LIVE=1 swift test`. Read-only (collection
+    /// lookup); creates nothing.
+    func testLiveCollectionLookup() async throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["ZOTERO_LIVE"] == "1",
+                          "set ZOTERO_LIVE=1 to run against the real API")
+        let settingsFile = URL(fileURLWithPath: LegacyStoreImporterTests.databasePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("config/settings.yaml")
+        let settings = try Zotero.Settings.load(settingsFile: settingsFile)
+        let key = try await Zotero.Client(settings: settings).ensureCollection()
+        XCTAssertFalse(key.isEmpty, "collection key resolved")
+    }
+
     func testSettingsRejectMissingKey() throws {
         let file = FileManager.default.temporaryDirectory
             .appendingPathComponent("settings-\(UUID().uuidString).yaml")
