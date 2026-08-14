@@ -22,6 +22,20 @@ struct IDIntelligenceApp: App {
     }
 }
 
+/// Locations shared with the Python engine. Everything derives from the
+/// engine checkout so `config/settings.yaml` stays the single config surface.
+enum AppPaths {
+    static let collectionKeyDefault = "zoteroCollectionKey"
+
+    /// `<engine>/data/idintel.db` → `<engine>/config/settings.yaml`.
+    static var settingsFile: URL {
+        URL(fileURLWithPath: ImportController.databasePath)
+            .deletingLastPathComponent()   // data/
+            .deletingLastPathComponent()   // engine root
+            .appending(path: "config/settings.yaml")
+    }
+}
+
 /// Bridges the Python engine's SQLite database into the app's store.
 /// Phase 2 of the plan: the engine remains the system of record; the app
 /// re-imports on launch and on demand until the pipeline is ported.
@@ -37,8 +51,9 @@ final class ImportController {
 
     var status: Status = .idle
 
-    /// Default engine location; overridable in the UI via UserDefaults.
-    static var databasePath: String {
+    /// Default engine location; overridable via UserDefaults. Nonisolated:
+    /// UserDefaults is thread-safe and nonisolated AppPaths derives from this.
+    nonisolated static var databasePath: String {
         UserDefaults.standard.string(forKey: "legacyDBPath")
             ?? NSHomeDirectory() + "/id-intelligence/data/idintel.db"
     }

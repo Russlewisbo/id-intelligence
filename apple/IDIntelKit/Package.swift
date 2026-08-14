@@ -11,8 +11,13 @@ let package = Package(
     products: [
         .library(name: "IDIntelKit", targets: ["IDIntelKit"])
     ],
+    dependencies: [
+        // YAML: the engine's config/*.yaml stay the shared tuning surface
+        // (plan D4) — Zotero credentials now, scoring rules with the port.
+        .package(url: "https://github.com/jpsim/Yams.git", from: "5.0.0")
+    ],
     targets: [
-        .target(name: "IDIntelKit"),
+        .target(name: "IDIntelKit", dependencies: ["Yams"]),
         .testTarget(name: "IDIntelKitTests", dependencies: ["IDIntelKit"]),
     ]
 )

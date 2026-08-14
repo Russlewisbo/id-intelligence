@@ -79,6 +79,11 @@ final class LegacyStoreImporterTests: XCTestCase {
         let marked = try XCTUnwrap(papers.first)
         marked.starred = true
         marked.readAt = Date()
+        // A native Zotero archive of a paper the engine never filed: the
+        // legacy NULL must not clobber it on re-import.
+        let nativelyArchived = try XCTUnwrap(papers.first { $0.zoteroKey == nil })
+        nativelyArchived.zoteroKey = "NATIVE01"
+        nativelyArchived.archivedAt = Date()
         try context.save()
 
         let second = try importer.run(into: context)
@@ -88,5 +93,8 @@ final class LegacyStoreImporterTests: XCTestCase {
 
         XCTAssertTrue(marked.starred, "starred survived re-import")
         XCTAssertNotNil(marked.readAt, "readAt survived re-import")
+        XCTAssertEqual(nativelyArchived.zoteroKey, "NATIVE01",
+                       "native Zotero archive survived re-import")
+        XCTAssertNotNil(nativelyArchived.archivedAt)
     }
 }

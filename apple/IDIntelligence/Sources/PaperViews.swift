@@ -68,14 +68,25 @@ struct PaperRow: View {
                         .font(.caption2)
                         .foregroundStyle(.yellow)
                 }
+                if paper.zoteroKey != nil {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.green)
+                        .help("In Zotero")
+                }
             }
         }
         .padding(.vertical, 2)
+        // Read papers recede, like the HTML digest's archived cards — the
+        // unread dot marks what's new, the dimming marks what's been seen.
+        .opacity(paper.readAt == nil ? 1 : 0.55)
     }
 }
 
 struct PaperDetailView: View {
     @Bindable var paper: Paper
+    @State private var archiving = false
+    @State private var zoteroError: String?
 
     var body: some View {
         ScrollView {
@@ -120,11 +131,68 @@ struct PaperDetailView: View {
                        systemImage: paper.starred ? "star.fill" : "star") {
                     paper.starred.toggle()
                 }
+                zoteroButton
                 if let url = linkURL {
                     Link(destination: url) { Label("Open", systemImage: "safari") }
                 }
             }
         }
+        .alert("Zotero", isPresented: .init(
+            get: { zoteroError != nil },
+            set: { if !$0 { zoteroError = nil } })
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(zoteroError ?? "")
+        }
+    }
+
+    @ViewBuilder
+    private var zoteroButton: some View {
+        if paper.zoteroKey != nil {
+            Label("In Zotero", systemImage: "checkmark.seal.fill")
+                .foregroundStyle(.green)
+        } else if archiving {
+            ProgressView().controlSize(.small)
+        } else {
+            Button("Zotero", systemImage: "plus.square.on.square") {
+                Task { await archiveToZotero() }
+            }
+            .help("File this paper into the ID Intelligence collection")
+        }
+    }
+
+    private func archiveToZotero() async {
+        archiving = true
+        defer { archiving = false }
+        do {
+            let settings = try Zotero.Settings.load(settingsFile: AppPaths.settingsFile)
+            let client = Zotero.Client(settings: settings)
+
+            // Collection key is cached; a stale key (collection deleted or
+            // renamed) fails the create, so clear the cache and retry once.
+            var item = Zotero.Item(paper: paper, tag: settings.tag)
+            do {
+                item.collections = [try await collectionKey(client)]
+                paper.zoteroKey = try await client.createItem(item)
+            } catch {
+                UserDefaults.standard.removeObject(forKey: AppPaths.collectionKeyDefault)
+                item.collections = [try await collectionKey(client)]
+                paper.zoteroKey = try await client.createItem(item)
+            }
+            paper.archivedAt = .now
+        } catch {
+            zoteroError = "\(error)"
+        }
+    }
+
+    private func collectionKey(_ client: Zotero.Client) async throws -> String {
+        if let cached = UserDefaults.standard.string(forKey: AppPaths.collectionKeyDefault) {
+            return cached
+        }
+        let key = try await client.ensureCollection()
+        UserDefaults.standard.set(key, forKey: AppPaths.collectionKeyDefault)
+        return key
     }
 
     private var linkURL: URL? {

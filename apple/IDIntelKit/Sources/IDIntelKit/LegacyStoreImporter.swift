@@ -125,8 +125,14 @@ public struct LegacyStoreImporter {
         paper.appraisalError = row.text(21)
         paper.topical = row.int64(22) != 0
         paper.journalTier = row.text(23)
-        paper.archivedAt = row.isoDate(24)
-        paper.zoteroKey = row.text(25)
+        // Zotero state merges rather than overwrites: the app can archive
+        // natively (which the engine's database knows nothing about), so a
+        // legacy NULL must never clobber a native key. A legacy value wins —
+        // it means the serve-based flow filed this paper first.
+        if let key = row.text(25) {
+            paper.zoteroKey = key
+            paper.archivedAt = row.isoDate(24) ?? paper.archivedAt
+        }
         // Deliberately untouched: readAt, starred (native-only state).
     }
 
