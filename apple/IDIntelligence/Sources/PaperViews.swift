@@ -2,6 +2,38 @@ import IDIntelKit
 import SwiftData
 import SwiftUI
 
+/// One shared archive path so the row button, context menu and detail
+/// toolbar behave identically: load credentials from the engine's
+/// settings.yaml, ensure the collection (cached key, one retry when stale),
+/// create the item, stamp the paper.
+@MainActor
+enum ZoteroArchiver {
+    static func archive(_ paper: Paper) async throws {
+        let settings = try Zotero.Settings.load(settingsFile: AppPaths.settingsFile)
+        let client = Zotero.Client(settings: settings)
+        var item = Zotero.Item(paper: paper, tag: settings.tag)
+        do {
+            item.collections = [try await collectionKey(client)]
+            paper.zoteroKey = try await client.createItem(item)
+        } catch {
+            // Stale cached collection key (deleted/renamed): refresh and retry once.
+            UserDefaults.standard.removeObject(forKey: AppPaths.collectionKeyDefault)
+            item.collections = [try await collectionKey(client)]
+            paper.zoteroKey = try await client.createItem(item)
+        }
+        paper.archivedAt = .now
+    }
+
+    private static func collectionKey(_ client: Zotero.Client) async throws -> String {
+        if let cached = UserDefaults.standard.string(forKey: AppPaths.collectionKeyDefault) {
+            return cached
+        }
+        let key = try await client.ensureCollection()
+        UserDefaults.standard.set(key, forKey: AppPaths.collectionKeyDefault)
+        return key
+    }
+}
+
 /// Journal-tier badge with the same colour semantics as the HTML digest:
 /// green = Top general / Agency, blue = Core ID, grey = Specialist,
 /// amber = Unranked (the screen-this-venue cue).
@@ -29,6 +61,8 @@ struct TierBadge: View {
 
 struct PaperRow: View {
     let paper: Paper
+    @State private var archiving = false
+    @State private var archiveError: String?
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
@@ -68,11 +102,24 @@ struct PaperRow: View {
                         .font(.caption2)
                         .foregroundStyle(.yellow)
                 }
+                // Per-record Zotero action, like the HTML digest's card
+                // button — no need to open the paper first.
                 if paper.zoteroKey != nil {
                     Image(systemName: "checkmark.seal.fill")
                         .font(.caption2)
                         .foregroundStyle(.green)
                         .help("In Zotero")
+                } else if archiving {
+                    ProgressView().controlSize(.mini)
+                } else {
+                    Button {
+                        Task { await sendToZotero() }
+                    } label: {
+                        Image(systemName: "plus.square.on.square")
+                            .font(.caption2)
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Send to Zotero")
                 }
             }
         }
@@ -80,6 +127,40 @@ struct PaperRow: View {
         // Read papers recede, like the HTML digest's archived cards — the
         // unread dot marks what's new, the dimming marks what's been seen.
         .opacity(paper.readAt == nil ? 1 : 0.55)
+        .contextMenu {
+            if paper.zoteroKey == nil {
+                Button("Send to Zotero", systemImage: "plus.square.on.square") {
+                    Task { await sendToZotero() }
+                }
+            }
+            Button(paper.starred ? "Unstar" : "Star",
+                   systemImage: paper.starred ? "star.slash" : "star") {
+                paper.starred.toggle()
+            }
+            if paper.readAt != nil {
+                Button("Mark Unread", systemImage: "circle.fill") {
+                    paper.readAt = nil
+                }
+            }
+        }
+        .alert("Zotero", isPresented: .init(
+            get: { archiveError != nil },
+            set: { if !$0 { archiveError = nil } })
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(archiveError ?? "")
+        }
+    }
+
+    private func sendToZotero() async {
+        archiving = true
+        defer { archiving = false }
+        do {
+            try await ZoteroArchiver.archive(paper)
+        } catch {
+            archiveError = "\(error)"
+        }
     }
 }
 
@@ -166,33 +247,10 @@ struct PaperDetailView: View {
         archiving = true
         defer { archiving = false }
         do {
-            let settings = try Zotero.Settings.load(settingsFile: AppPaths.settingsFile)
-            let client = Zotero.Client(settings: settings)
-
-            // Collection key is cached; a stale key (collection deleted or
-            // renamed) fails the create, so clear the cache and retry once.
-            var item = Zotero.Item(paper: paper, tag: settings.tag)
-            do {
-                item.collections = [try await collectionKey(client)]
-                paper.zoteroKey = try await client.createItem(item)
-            } catch {
-                UserDefaults.standard.removeObject(forKey: AppPaths.collectionKeyDefault)
-                item.collections = [try await collectionKey(client)]
-                paper.zoteroKey = try await client.createItem(item)
-            }
-            paper.archivedAt = .now
+            try await ZoteroArchiver.archive(paper)
         } catch {
             zoteroError = "\(error)"
         }
-    }
-
-    private func collectionKey(_ client: Zotero.Client) async throws -> String {
-        if let cached = UserDefaults.standard.string(forKey: AppPaths.collectionKeyDefault) {
-            return cached
-        }
-        let key = try await client.ensureCollection()
-        UserDefaults.standard.set(key, forKey: AppPaths.collectionKeyDefault)
-        return key
     }
 
     private var linkURL: URL? {
