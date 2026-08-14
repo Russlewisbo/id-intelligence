@@ -17,3 +17,6 @@ config/settings.yaml
 .swiftpm/
 DerivedData/
 xcuserdata/
+
+# XcodeGen output — regenerate with `xcodegen generate`.
+*.xcodeproj/
