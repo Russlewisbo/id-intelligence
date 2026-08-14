@@ -27,6 +27,7 @@ struct ContentView: View {
     private var container: ModelContainer { context.container }
 
     @Query(sort: \Paper.score, order: .reverse) private var papers: [Paper]
+    @Query private var exclusions: [ExcludedJournal]
 
     @State private var scope: Scope = .digest
     @State private var selected: Paper?
@@ -114,7 +115,14 @@ struct ContentView: View {
 
     private func passesDigestGate(_ paper: Paper) -> Bool {
         guard let tier = paper.journalTier, tier != "Unranked" else { return false }
+        // Journals unchecked in Settings (⌘,) are vetoed whatever they score.
+        if let journal = paper.journal,
+           excludedJournals.contains(journal) { return false }
         return paper.topical || paper.score >= keepFloor
+    }
+
+    private var excludedJournals: Set<String> {
+        Set(exclusions.map(\.name))
     }
 
     private func matchesSearch(_ paper: Paper) -> Bool {

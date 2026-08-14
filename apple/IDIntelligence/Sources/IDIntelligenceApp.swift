@@ -8,7 +8,7 @@ struct IDIntelligenceApp: App {
 
     init() {
         do {
-            container = try ModelContainer(for: Paper.self)
+            container = try ModelContainer(for: Paper.self, ExcludedJournal.self)
         } catch {
             fatalError("Cannot open the local store: \(error)")
         }
@@ -17,6 +17,13 @@ struct IDIntelligenceApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+        }
+        .modelContainer(container)
+
+        // App menu → Settings… (⌘,): the journal picker controlling the
+        // Digest scope.
+        Settings {
+            JournalSettingsView()
         }
         .modelContainer(container)
     }
