@@ -32,7 +32,7 @@ struct ContentView: View {
     @State private var scope: Scope = .digest
     @State private var selected: Paper?
     @State private var search = ""
-    @State private var importer = ImportController()
+    @Environment(ImportController.self) private var importer
 
     /// The engine's daily keep floor (settings.yaml `report.daily_keep_score`).
     /// Duplicated here until the Swift engine port reads the shared YAML.
@@ -66,7 +66,9 @@ struct ContentView: View {
             }
         }
         .task {
-            if papers.isEmpty { await importer.refresh(container: container) }
+            // Import anything the engine produced while the app was closed,
+            // then file-watch so scheduled runs land without a manual Refresh.
+            await importer.startup(container: container)
         }
     }
 
