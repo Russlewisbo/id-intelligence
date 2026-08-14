@@ -34,6 +34,21 @@ enum ZoteroArchiver {
     }
 }
 
+/// The send-to-Zotero mark: Zotero's unmistakable red "Z" (drawn natively —
+/// no trademarked asset shipped), so the button reads instantly to a Zotero
+/// user, unlike a generic SF Symbol.
+struct ZoteroMark: View {
+    var size: CGFloat = 13
+
+    static let zoteroRed = Color(red: 0.80, green: 0.16, blue: 0.21)
+
+    var body: some View {
+        Text("Z")
+            .font(.system(size: size, weight: .heavy, design: .serif))
+            .foregroundStyle(Self.zoteroRed)
+    }
+}
+
 /// Journal-tier badge with the same colour semantics as the HTML digest:
 /// green = Top general / Agency, blue = Core ID, grey = Specialist,
 /// amber = Unranked (the screen-this-venue cue).
@@ -115,11 +130,10 @@ struct PaperRow: View {
                     Button {
                         Task { await sendToZotero() }
                     } label: {
-                        Image(systemName: "plus.square.on.square")
-                            .font(.caption2)
+                        ZoteroMark()
                     }
                     .buttonStyle(.borderless)
-                    .help("Send to Zotero")
+                    .help("Send to the Zotero “ID Intelligence” collection")
                 }
             }
         }
@@ -236,10 +250,15 @@ struct PaperDetailView: View {
         } else if archiving {
             ProgressView().controlSize(.small)
         } else {
-            Button("Zotero", systemImage: "plus.square.on.square") {
+            Button {
                 Task { await archiveToZotero() }
+            } label: {
+                HStack(spacing: 3) {
+                    ZoteroMark(size: 14)
+                    Text("Zotero")
+                }
             }
-            .help("File this paper into the ID Intelligence collection")
+            .help("Send to the Zotero “ID Intelligence” collection")
         }
     }
 
