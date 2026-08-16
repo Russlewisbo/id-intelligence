@@ -5,6 +5,7 @@ import SwiftUI
 /// Sidebar scopes. `digest` mirrors the Python engine's daily gate
 /// (report.py): ranked journal + (topical hit OR score above the keep floor).
 enum Scope: String, CaseIterable, Identifiable {
+    case today = "Today"
     case digest = "Digest"
     case starred = "Starred"
     case appraised = "Appraised"
@@ -14,6 +15,7 @@ enum Scope: String, CaseIterable, Identifiable {
 
     var symbol: String {
         switch self {
+        case .today: "sunrise.fill"
         case .digest: "doc.text.image"
         case .starred: "star.fill"
         case .appraised: "sparkles"
@@ -29,7 +31,7 @@ struct ContentView: View {
     @Query(sort: \Paper.score, order: .reverse) private var papers: [Paper]
     @Query private var exclusions: [ExcludedJournal]
 
-    @State private var scope: Scope = .digest
+    @State private var scope: Scope = .today
     @State private var selected: Paper?
     @State private var search = ""
     @Environment(ImportController.self) private var importer
@@ -41,7 +43,9 @@ struct ContentView: View {
     var body: some View {
         NavigationSplitView {
             List(Scope.allCases, selection: $scope) { s in
-                Label(s.rawValue, systemImage: s.symbol).tag(s)
+                Label(s.rawValue, systemImage: s.symbol)
+                    .badge(s == .today ? unreadTodayCount : 0)
+                    .tag(s)
             }
             .navigationSplitViewColumnWidth(min: 170, ideal: 190)
         } content: {
@@ -77,6 +81,7 @@ struct ContentView: View {
     private var visiblePapers: [Paper] {
         papers.filter { paper in
             switch scope {
+            case .today: isFreshArrival(paper) && passesDigestGate(paper)
             case .digest: passesDigestGate(paper)
             case .starred: paper.starred
             case .appraised: paper.appraisalJSON != nil
@@ -84,6 +89,14 @@ struct ContentView: View {
             }
         }
         .filter { matchesSearch($0) }
+    }
+
+    /// The morning-digest framing the HTML report had and the app lost: only
+    /// papers the engine first collected in the last 24 hours. The 87 new
+    /// papers of a given morning are invisible when sorted by score into
+    /// 5,000+ older records; this scope is where "what's new today" lives.
+    private func isFreshArrival(_ paper: Paper) -> Bool {
+        paper.firstSeen > Date.now.addingTimeInterval(-24 * 3600)
     }
 
     private var paperList: some View {
@@ -125,6 +138,10 @@ struct ContentView: View {
 
     private var excludedJournals: Set<String> {
         Set(exclusions.map(\.name))
+    }
+
+    private var unreadTodayCount: Int {
+        papers.count { isFreshArrival($0) && passesDigestGate($0) && $0.readAt == nil }
     }
 
     private func matchesSearch(_ paper: Paper) -> Bool {
