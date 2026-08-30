@@ -245,7 +245,10 @@
 
     fetch(API + "/api/archive", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      // X-Idintel is required by the server. A custom header cannot be set on a
+      // cross-origin request without a preflight the server refuses, so this is
+      // what stops another site silently writing to your Zotero library.
+      headers: { "Content-Type": "application/json", "X-Idintel": "1" },
       body: JSON.stringify({ id: id })
     })
     .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })

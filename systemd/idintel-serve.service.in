@@ -7,10 +7,10 @@ Wants=network-online.target
 # Long-running server (not oneshot): serves the reports at http://localhost:8791
 # and handles the "＋ Zotero" archive buttons.
 Type=simple
-WorkingDirectory=/home/ussellr/Desktop/ID app
-ExecStart="/home/ussellr/Desktop/ID app/idintel.sh" serve --host 127.0.0.1 --port 8791
-StandardOutput=append:/home/ussellr/Desktop/ID app/logs/serve.log
-StandardError=append:/home/ussellr/Desktop/ID app/logs/serve.log
+WorkingDirectory=@APP_DIR@
+ExecStart="@APP_DIR@/idintel.sh" serve --host 127.0.0.1 --port 8791
+StandardOutput=append:@APP_DIR@/logs/serve.log
+StandardError=append:@APP_DIR@/logs/serve.log
 # Restart if it ever crashes, with a short back-off.
 Restart=on-failure
 RestartSec=5
