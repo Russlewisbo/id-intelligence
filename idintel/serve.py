@@ -153,6 +153,10 @@ class Handler(BaseHTTPRequestHandler):
         ctype = "text/html; charset=utf-8" if target.suffix == ".html" else "application/octet-stream"
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(data)))
+        # Reports are rewritten in place every morning and latest-*.html is a
+        # moving symlink, so a cached copy silently shows yesterday's papers --
+        # and, after a client-side change, yesterday's JavaScript.
+        self.send_header("Cache-Control", "no-store, must-revalidate")
         self.end_headers()
         self.wfile.write(data)
 
