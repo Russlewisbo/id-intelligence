@@ -1,0 +1,13 @@
+[Unit]
+Description=ID Intelligence — monthly thematic review
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=@APP_DIR@
+ExecStart="@APP_DIR@/idintel.sh" monthly
+StandardOutput=append:@APP_DIR@/logs/monthly.log
+StandardError=append:@APP_DIR@/logs/monthly.log
+TimeoutStartSec=1800
+Nice=10

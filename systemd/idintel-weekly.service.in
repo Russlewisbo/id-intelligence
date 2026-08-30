@@ -1,0 +1,13 @@
+[Unit]
+Description=ID Intelligence — weekly must-read
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=@APP_DIR@
+ExecStart="@APP_DIR@/idintel.sh" weekly
+StandardOutput=append:@APP_DIR@/logs/weekly.log
+StandardError=append:@APP_DIR@/logs/weekly.log
+TimeoutStartSec=1800
+Nice=10

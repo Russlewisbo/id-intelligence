@@ -1,0 +1,14 @@
+[Unit]
+Description=ID Intelligence — daily digest
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=@APP_DIR@
+ExecStart="@APP_DIR@/idintel.sh" daily
+StandardOutput=append:@APP_DIR@/logs/daily.log
+StandardError=append:@APP_DIR@/logs/daily.log
+# Collection plus up to 35 AI appraisals; generous ceiling before systemd kills it.
+TimeoutStartSec=5400
+Nice=10
