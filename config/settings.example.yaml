@@ -159,7 +159,12 @@ trials:
 
 # ------------------------------------------------------------------- appraisal
 summary:
-  model: sonnet
+  # Model for the appraisal step. Prefer a full model ID over a bare alias:
+  # older `claude` CLI builds map the "sonnet" alias to a now-retired model
+  # (claude-sonnet-4-20250514) that returns HTTP 404. If `idintel doctor` shows
+  # the Claude CLI failing with a 404 / not_found_error, pin a current ID here,
+  # e.g. claude-sonnet-5. Run `claude -p --model <id> "ok"` to test one.
+  model: claude-sonnet-5
   # Only records scoring at least this much are sent to the model.
   min_score: 22
   # Hard ceiling on model calls per run — the cost/time guard rail.
@@ -200,3 +205,11 @@ report:
     high: 0
     medium: 40
     low: 20
+  # Strongest quality filter: when true, the daily digest shows ONLY journals
+  # that matched a tier in scoring.yaml (Top general / Core ID / Specialist /
+  # Agency) and drops every "Unranked" journal — the low-quality long tail. To
+  # add a journal you read, put it in the appropriate journal_tiers list.
+  ranked_journals_only: false
+  # Extra hard blocks (applied even to ranked journals). Case-insensitive
+  # substring match on the journal name. Leave empty to block nothing.
+  blocked_journals: []

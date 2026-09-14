@@ -54,6 +54,9 @@ def _entry_to_record(entry, feed: dict) -> Record | None:
             authors.append(name)
     if not authors and entry.get("author"):
         authors = [util.strip_html(entry["author"])]
+    # Some feeds pack the entire byline into one string; split it into one
+    # name per author (see util.split_byline).
+    authors = util.split_byline(authors)
 
     # An RSS "abstract" that merely repeats the title carries no information.
     if abstract and util.norm_title(abstract) == util.norm_title(title):
