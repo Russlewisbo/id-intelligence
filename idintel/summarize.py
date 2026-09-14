@@ -233,6 +233,18 @@ def call_claude(prompt: str, cfg) -> dict:
     missing = [k for k in SCHEMA["required"] if k not in payload]
     if missing:
         raise SummaryError(f"missing fields: {', '.join(missing)}")
+
+    # Nothing enforces types now that the CLI has no --json-schema flag: the
+    # check above only proves the key is present. Coerce `stars` here, where a
+    # bad value is attributable to one record and raises SummaryError like any
+    # other content failure. summarize_pending writes this value to an INTEGER
+    # column from outside the per-record try, so an uncaught TypeError there
+    # would abort the entire run and leave the offending record unmarked.
+    try:
+        stars = int(payload["stars"])
+    except (TypeError, ValueError) as exc:
+        raise SummaryError(f"non-integer stars: {payload['stars']!r}") from exc
+    payload["stars"] = max(1, min(5, stars))
     return payload
 
 
@@ -283,7 +295,7 @@ def summarize_pending(db, cfg, limit: int | None = None, progress=None) -> dict:
                          WHERE id = ?
                         """,
                         (json.dumps(payload), now, model,
-                         int(payload.get("stars", 3)), record_id),
+                         payload["stars"], record_id),
                     )
                 stats["ok"] += 1
             else:

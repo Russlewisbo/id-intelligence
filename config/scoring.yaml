@@ -200,7 +200,15 @@ rules:
     fields: [title, abstract, pub_types]
     any_of: ["Case Reports?", "a case of", "case series of \\d", "we report a case"]
     # A review that merely discusses case reports is not itself a case report.
-    none_of: ["case series of \\d{3,}", "Guideline", "\\bReview\\b"]
+    # NB: a bare "\bReview\b" cannot be used here. Matching is case-insensitive
+    # and all three fields are joined into one haystack, so it also matched the
+    # lowercase "review" in ordinary case-report boilerplate ("we review the
+    # literature", "a review of previously published cases") — which silently
+    # cancelled this penalty for most case reports, and let one tagged "Review"
+    # in pub_types collect review_article's +22 on top. These phrases identify
+    # an actual review article instead.
+    none_of: ["case series of \\d{3,}", "Guideline", "narrative review",
+              "scoping review", "state[- ]of[- ]the[- ]art", "\\bseminar\\b"]
 
   - id: non_human
     label: Non-clinical / animal model
