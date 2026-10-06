@@ -11,3 +11,12 @@ config/settings.yaml
 
 # Per-machine Claude Code permission overrides — not for sharing.
 .claude/settings.local.json
+
+# Swift build artifacts (apple/ native apps).
+.build/
+.swiftpm/
+DerivedData/
+xcuserdata/
+
+# XcodeGen output — regenerate with `xcodegen generate`.
+*.xcodeproj/

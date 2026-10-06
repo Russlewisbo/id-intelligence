@@ -1,0 +1,36 @@
+# XcodeGen spec for the macOS app. Regenerate the project with:
+#   xcodegen generate   (run inside apple/IDIntelligence)
+# The .xcodeproj is generated output and stays out of git.
+name: IDIntelligence
+options:
+  bundleIdPrefix: com.russelllewis
+  deploymentTarget:
+    macOS: "15.0"
+  createIntermediateGroups: true
+packages:
+  IDIntelKit:
+    path: ../IDIntelKit
+targets:
+  IDIntelligence:
+    type: application
+    platform: macOS
+    sources:
+      - Sources
+      - Resources
+    dependencies:
+      - package: IDIntelKit
+        product: IDIntelKit
+    settings:
+      base:
+        PRODUCT_NAME: ID Intelligence
+        PRODUCT_BUNDLE_IDENTIFIER: com.russelllewis.idintelligence
+        MARKETING_VERSION: 0.1.0
+        CURRENT_PROJECT_VERSION: 1
+        SWIFT_VERSION: "6.0"
+        # Personal distribution (plan D3): ad-hoc signing, no sandbox — the app
+        # must read the Python engine's database and, later, spawn the claude CLI.
+        CODE_SIGN_IDENTITY: "-"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: ID Intelligence
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.medical
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
