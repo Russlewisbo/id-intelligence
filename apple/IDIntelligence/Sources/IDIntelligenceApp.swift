@@ -8,7 +8,10 @@ struct IDIntelligenceApp: App {
 
     init() {
         do {
-            container = try ModelContainer(for: Paper.self, ExcludedJournal.self)
+            let url = try AppPaths.prepareStore()
+            container = try ModelContainer(
+                for: Paper.self, ExcludedJournal.self,
+                configurations: ModelConfiguration(url: url))
         } catch {
             fatalError("Cannot open the local store: \(error)")
         }
@@ -36,6 +39,37 @@ struct IDIntelligenceApp: App {
 /// engine checkout so `config/settings.yaml` stays the single config surface.
 enum AppPaths {
     static let collectionKeyDefault = "zoteroCollectionKey"
+
+    /// The app's own store, `~/Library/Application Support/ID Intelligence/`.
+    /// Unsandboxed, SwiftData's default is a shared `Application Support/
+    /// default.store` that any other unsandboxed SwiftData app also uses.
+    static var storeURL: URL {
+        URL.applicationSupportDirectory
+            .appending(path: "ID Intelligence", directoryHint: .isDirectory)
+            .appending(path: "Papers.store")
+    }
+
+    /// Ensures the store folder exists and, on first launch of a build using
+    /// `storeURL`, carries over the earlier `default.store` (with its -wal/-shm
+    /// siblings) so read/star/Zotero state survives the move. The old files
+    /// are copied, never deleted.
+    static func prepareStore() throws -> URL {
+        let fm = FileManager.default
+        let url = storeURL
+        try fm.createDirectory(at: url.deletingLastPathComponent(),
+                               withIntermediateDirectories: true)
+        let legacy = URL.applicationSupportDirectory.appending(path: "default.store")
+        if !fm.fileExists(atPath: url.path), fm.fileExists(atPath: legacy.path) {
+            for suffix in ["", "-wal", "-shm"] {
+                let from = URL(fileURLWithPath: legacy.path + suffix)
+                let to = URL(fileURLWithPath: url.path + suffix)
+                if fm.fileExists(atPath: from.path) {
+                    try fm.copyItem(at: from, to: to)
+                }
+            }
+        }
+        return url
+    }
 
     /// `<engine>/data/idintel.db` → `<engine>/config/settings.yaml`.
     static var settingsFile: URL {

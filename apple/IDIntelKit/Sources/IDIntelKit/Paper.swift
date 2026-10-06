@@ -52,6 +52,10 @@ public final class Paper {
     /// `records.id` in the Python SQLite database. Used by the importer to
     /// upsert incrementally; 0 means "created natively, no legacy row".
     public var legacyID: Int64 = 0
+    /// Fingerprint of the engine-owned columns at the last import. A re-import
+    /// skips rows whose fingerprint is unchanged, so an engine run touching a
+    /// few hundred records doesn't rewrite (and re-render) the whole store.
+    public var legacyStamp: String?
 
     // ---------------------------------------------------------- identity
     public var kind: String = "article"           // article | preprint | trial
@@ -114,7 +118,17 @@ public final class Paper {
     public var readAt: Date?
     public var starred: Bool = false
 
+    /// Title + journal + appraisal topics in one non-optional column, so the
+    /// search box is a single SQL `CONTAINS` (see `PaperFilter`). Maintained
+    /// by the importer; call `rebuildSearchIndex()` after editing those fields.
+    public var searchIndex: String = ""
+
     public init() {}
+
+    public func rebuildSearchIndex() {
+        searchIndex = ([title, journal ?? ""] + (appraisal?.topics ?? []))
+            .joined(separator: " · ")
+    }
 
     /// Star rating shown on cards: the appraisal's stars, if appraised.
     public var stars: Int? { appraisal?.stars }

@@ -84,12 +84,17 @@ final class LegacyStoreImporterTests: XCTestCase {
         let nativelyArchived = try XCTUnwrap(papers.first { $0.zoteroKey == nil })
         nativelyArchived.zoteroKey = "NATIVE01"
         nativelyArchived.archivedAt = Date()
+        // Pretend the engine changed one row since the last import (and that
+        // row is the natively-archived one, so the merge path is exercised).
+        nativelyArchived.legacyStamp = "stale"
         try context.save()
 
         let second = try importer.run(into: context)
         XCTAssertEqual(second.inserted, 0, "no duplicates on re-import")
-        XCTAssertEqual(second.updated, first.inserted, "every row refreshed")
+        XCTAssertEqual(second.updated, 1, "only the changed row is rewritten")
+        XCTAssertEqual(second.unchanged, first.inserted - 1, "untouched rows are skipped")
         XCTAssertEqual(try context.fetch(FetchDescriptor<Paper>()).count, first.inserted)
+        XCTAssertNotEqual(nativelyArchived.legacyStamp, "stale", "changed row re-stamped")
 
         XCTAssertTrue(marked.starred, "starred survived re-import")
         XCTAssertNotNil(marked.readAt, "readAt survived re-import")

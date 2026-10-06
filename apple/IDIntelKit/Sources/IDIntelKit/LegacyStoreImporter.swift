@@ -15,7 +15,9 @@ public struct LegacyStoreImporter {
     public struct Summary: Sendable {
         public var inserted = 0
         public var updated = 0
-        public var total: Int { inserted + updated }
+        /// Rows whose engine-owned columns hadn't changed — skipped untouched.
+        public var unchanged = 0
+        public var total: Int { inserted + updated + unchanged }
     }
 
     public enum ImportError: Error, CustomStringConvertible {
@@ -33,6 +35,10 @@ public struct LegacyStoreImporter {
     }
 
     let databasePath: String
+
+    /// Bump when `apply` starts deriving a new field (e.g. `searchIndex`):
+    /// every stored stamp then mismatches once, so all rows are refreshed.
+    static let stampVersion = "v1"
 
     public init(databasePath: String) {
         self.databasePath = databasePath
@@ -57,7 +63,7 @@ public struct LegacyStoreImporter {
                    url, published, first_seen, last_seen, pub_types, sources,
                    score, score_breakdown, priority, summary, summary_at,
                    summary_model, summary_error, topical, journal_tier,
-                   archived_at, zotero_key
+                   archived_at, zotero_key, scored_at
               FROM records
             """
         var stmt: OpaquePointer?
@@ -66,9 +72,11 @@ public struct LegacyStoreImporter {
         }
         defer { sqlite3_finalize(stmt) }
 
-        // One fetch of the existing mapping beats a per-row predicate fetch.
-        let existing = try context.fetch(FetchDescriptor<Paper>(
-            predicate: #Predicate { $0.legacyID > 0 }))
+        // One fetch of the existing mapping beats a per-row predicate fetch;
+        // only the two columns the change check needs are loaded up front.
+        var mapping = FetchDescriptor<Paper>(predicate: #Predicate { $0.legacyID > 0 })
+        mapping.propertiesToFetch = [\.legacyID, \.legacyStamp]
+        let existing = try context.fetch(mapping)
         var byLegacyID = Dictionary(existing.map { ($0.legacyID, $0) },
                                     uniquingKeysWith: { first, _ in first })
 
@@ -81,8 +89,16 @@ public struct LegacyStoreImporter {
             }
             let row = Row(stmt: stmt)
             let legacyID = row.int64(0)
+            let stamp = row.stamp()
             let paper: Paper
             if let found = byLegacyID[legacyID] {
+                // Unchanged since the last import: don't touch it. Writing
+                // identical values still dirties the object, and a 15k-row
+                // save re-renders every list in the app.
+                if found.legacyStamp == stamp {
+                    summary.unchanged += 1
+                    continue
+                }
                 paper = found
                 summary.updated += 1
             } else {
@@ -93,9 +109,11 @@ public struct LegacyStoreImporter {
                 summary.inserted += 1
             }
             apply(row, to: paper)
+            paper.rebuildSearchIndex()
+            paper.legacyStamp = stamp
         }
 
-        try context.save()
+        if context.hasChanges { try context.save() }
         return summary
     }
 
@@ -152,6 +170,16 @@ public struct LegacyStoreImporter {
         }
 
         func int64(_ index: Int32) -> Int64 { sqlite3_column_int64(stmt, index) }
+
+        /// Fingerprint of the columns the engine rewrites after collection:
+        /// last_seen (dedupe merges, which also add abstracts/sources),
+        /// score/priority/topical/tier/scored_at (rescoring), summary_* (an
+        /// appraisal landing or failing), and the serve-flow Zotero state.
+        func stamp() -> String {
+            ([LegacyStoreImporter.stampVersion]
+             + [12, 15, 17, 19, 21, 22, 23, 24, 25, 26].map { text(Int32($0)) ?? "" })
+                .joined(separator: "|")
+        }
         func double(_ index: Int32) -> Double { sqlite3_column_double(stmt, index) }
 
         func isoDate(_ index: Int32) -> Date? {
